@@ -24,7 +24,7 @@ public class Employee {
 	Sex sex;
 	String password;
 
-	Employee(String employeeID, String name, Date birthDate, String role, Sex sex, String password) {
+	public Employee(String employeeID, String name, Date birthDate, String role, Sex sex, String password) {
 		this.empID = employeeID;
 		this.empName = name;
 		this.birthDate = birthDate;
@@ -32,7 +32,10 @@ public class Employee {
 		this.sex = sex;
 		this.password = password;
 	}
-
+	public String getEmpID(){
+		return empID;
+	}
+	
 	public String getName() {
 		return empName;
 	}

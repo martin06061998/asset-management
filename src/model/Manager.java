@@ -11,9 +11,9 @@ import java.util.Date;
  *
  * @author marti
  */
-class Manager extends Employee{
+public class Manager extends Employee{
 
-	Manager(String employeeID, String name, Date birthDate, String role, Sex sex, String password) {
+	public Manager(String employeeID, String name, Date birthDate, String role, Sex sex, String password) {
 		super(employeeID, name, birthDate, role, sex, password);
 	}
 	

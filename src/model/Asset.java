@@ -5,11 +5,13 @@
  */
 package model;
 
+import java.io.Serializable;
+
 /**
  *
  * @author marti
  */
-public class Asset {
+public class Asset implements Serializable{
 
 	final String assetID;
 	String assetName;
@@ -17,7 +19,7 @@ public class Asset {
 	long price;
 	double weight;
 	int quantity;
-	int curQty;
+	int curQty = -1;
 
 	Asset(String assetID, String name, String color, long price, double weight, int quantity) {
 		this.assetID = assetID;
@@ -75,4 +77,10 @@ public class Asset {
 	public void setCurQty(int curQty) {
 		this.curQty = curQty;
 	}
+
+	@Override
+	public String toString() {
+		return "Asset{" + "assetID=" + assetID + ", assetName=" + assetName + ", color=" + color + ", price=" + price + ", weight=" + weight + ", quantity=" + quantity + ", curQty=" + curQty + '}';
+	}
+
 }
