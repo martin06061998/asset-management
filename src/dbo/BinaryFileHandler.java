@@ -19,10 +19,9 @@ import java.io.Serializable;
  */
 public class BinaryFileHandler implements FileHandler<Serializable> {
 
-	private final String filePath = "src\\dbo\\asset.dat";
 
 	@Override
-	public Serializable read() throws ClassNotFoundException, IOException {
+	public Serializable read(String filePath) throws ClassNotFoundException, IOException {
 		File handler = new File(filePath);
 		if (!handler.exists() || !handler.canRead()) {
 			throw new IOException("File not found or not readable");
@@ -36,7 +35,7 @@ public class BinaryFileHandler implements FileHandler<Serializable> {
 	}
 
 	@Override
-	public void write(Serializable data) throws IOException {
+	public void write(Serializable data,String filePath) throws IOException {
 		File handler = new File(filePath);
 		String absolutePath = handler.getAbsolutePath();
 		FileOutputStream fos = new FileOutputStream(absolutePath);

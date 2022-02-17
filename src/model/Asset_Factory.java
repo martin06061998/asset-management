@@ -15,10 +15,10 @@ class Asset_Factory extends I_Factory<Asset> {
 
 	Asset_Factory() {
 		super();
-		regexMap.put("id", "A\\d{3}");
-		regexMap.put("name", "(?=^[A-Za-z\\s]{8,25}$)[A-Za-z]+(\\s[A-Za-z]+)*");
+		regexMap.put("id", "[aA]\\d{3}");
+		regexMap.put("name", "(?=^[A-Za-z0-9\\s]{2,25}$)[A-Za-z0-9]+(\\s[A-Za-z0-9]+)*");
 		regexMap.put("price", "\\d{1,18}");
-		regexMap.put("color", "(?=^[A-Za-z\\s]{8,25}$)[A-Za-z]+(\\s[A-Za-z]+)*");
+		regexMap.put("color", "(?=^[A-Za-z\\s]{3,25}$)[A-Za-z]+(\\s[A-Za-z]+)*");
 		regexMap.put("weight", "\\d{1,15}|(\\d{1,15}\\.\\d{1,15})");
 		regexMap.put("quantity", "\\d{1,8}");
 	}
@@ -38,10 +38,9 @@ class Asset_Factory extends I_Factory<Asset> {
 			throw new IllegalArgumentException("Format is invalid");
 		}
 	}
+	
+	
+	
 
-	@Override
-	Asset reforge(JsonNode request) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-	}
 
 }

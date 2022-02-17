@@ -22,10 +22,6 @@ abstract class I_Factory<T> {
 	}
 
 	abstract T createInstance(JsonNode target);
-
-	abstract T reforge(JsonNode request);
-	
-	
 	
 	final boolean checkPattern(JsonNode data,boolean checkNumberOfKeys) {
 		boolean isValidFormat = true;

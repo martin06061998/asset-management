@@ -24,13 +24,7 @@ public class EmployeeMenu extends AssetManagementMenu {
 	}
 
 	@Override
-	protected void searchAssetByName() {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-	}
-
-
-	@Override
-	protected void sendRequest(JsonNode request) {
+	protected JsonNode sendRequest(JsonNode request) {
 		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 

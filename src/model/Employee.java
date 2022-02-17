@@ -6,42 +6,51 @@
 package model;
 
 import java.util.Date;
+import utils.StringUtilities;
 
 /**
  *
- * @author marti 
- * The root class of the entity hierarchy hierarchy
+ * @author marti The root class of the entity hierarchy hierarchy
  */
 public class Employee {
+
 	public enum Sex {
 		male,
 		female
 	}
 	final String empID;
-	String empName;
+	String name;
 	Date birthDate;
 	String role;
 	Sex sex;
 	String password;
 
 	public Employee(String employeeID, String name, Date birthDate, String role, Sex sex, String password) {
-		this.empID = employeeID;
-		this.empName = name;
+		if (employeeID == null || name == null || birthDate == null || role == null || sex == null || password == null) {
+			throw new IllegalArgumentException("arguments should not be null");
+		}
+		this.empID = StringUtilities.toLowerCasse(employeeID);;
+		this.name = StringUtilities.toLowerCasse(name);
+		this.role = StringUtilities.toLowerCasse(role);
 		this.birthDate = birthDate;
-		this.role = role;
 		this.sex = sex;
 		this.password = password;
 	}
-	public String getEmpID(){
+
+	public String getEmpID() {
 		return empID;
 	}
-	
+
 	public String getName() {
-		return empName;
+		return name;
 	}
 
 	public void setName(String name) {
-		this.empName = name;
+		if (name == null) {
+			throw new IllegalArgumentException("arguments should not be null");
+		}
+		this.name = StringUtilities.toLowerCasse(name);
+
 	}
 
 	public Date getBirthDate() {
@@ -49,6 +58,9 @@ public class Employee {
 	}
 
 	public void setBirthDate(Date birthDate) {
+		if (birthDate == null) {
+			throw new IllegalArgumentException("arguments should not be null");
+		}
 		this.birthDate = birthDate;
 	}
 
@@ -57,7 +69,10 @@ public class Employee {
 	}
 
 	public void setRole(String role) {
-		this.role = role;
+		if (role == null) {
+			throw new IllegalArgumentException("arguments should not be null");
+		}
+		this.role = StringUtilities.toLowerCasse(role);
 	}
 
 	public Sex getSex() {
@@ -65,6 +80,9 @@ public class Employee {
 	}
 
 	public void setSex(Sex sex) {
+		if (sex == null) {
+			throw new IllegalArgumentException("arguments should not be null");
+		}
 		this.sex = sex;
 	}
 
@@ -73,6 +91,9 @@ public class Employee {
 	}
 
 	public void setPassword(String password) {
+		if (password == null) {
+			throw new IllegalArgumentException("arguments should not be null");
+		}
 		this.password = password;
 	}
 }

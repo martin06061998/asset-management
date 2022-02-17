@@ -6,7 +6,8 @@
 package view;
 
 import java.util.List;
-import utils.Utils;
+import utils.Inputter;
+import utils.StringUtilities;
 
 /**
  *
@@ -24,25 +25,35 @@ public abstract class AbstractMenu<E> implements I_Menu<E> {
 
 	@Override
 	public void showMenu() {
-		// do not delete this comment, your code here:
 		int size = choiceList.size();
 		for (int i = 0; i < size; i++) {
-			System.out.println(i + 1 + ". " +choiceList.get(i));
+			System.out.println(i + 1 + ". " + choiceList.get(i));
 		}
 	}
 
 	@Override
 	public boolean confirmYesNo(String welcome) {
-		boolean result = Utils.confirmYesNo(welcome);
+		boolean result = Inputter.confirmYesNo(welcome);
 		return result;
 	}
+
+
 	
 	@Override
 	public int getChoice() {
-		return Utils.getInt("Input your choice:", 1, choiceList.size());
+		System.out.println(StringUtilities.generateRepeatedString("*", 65));
+		for (int i = 0; i < choiceList.size(); i++) {
+			System.out.printf("%-3d.  %s\n", i + 1, choiceList.get(i));
+		}
+		System.out.println(StringUtilities.generateRepeatedString("*", 65));
+		int response = 0;
+		do {
+			response = Inputter.inputInteger("**(Note: Your options from 1 - " + choiceList.size() + ")");
+		} while (response < 0 || response > choiceList.size());
+		return response;
 	}
-	
-	protected E getItem(int choice){
+
+	protected E getItem(int choice) {
 		return choiceList.get(choice);
 	}
 }

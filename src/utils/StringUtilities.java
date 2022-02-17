@@ -33,7 +33,13 @@ public class StringUtilities {
 		}
 		return response.trim();
 	}
-
+	
+	public static String toLowerCasse(String target){
+		if(target == null)
+			throw new IllegalArgumentException("arguments should not be null");
+		return target.toLowerCase().trim().replaceAll("\\s{2,}", " ");
+	}
+	
 	public static String toPretty(String target) {
 		Objects.requireNonNull(target);
 		String doubleRegex = "\\d{1,15}\\.\\d{1,15}";
@@ -53,7 +59,4 @@ public class StringUtilities {
 		} 
 		return response;
 	}
-	/*public static String fixedLengthString(String string, int length) {
-        return String.format("%1$"+length+ "s", string);
-    }*/
 }

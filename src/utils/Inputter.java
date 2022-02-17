@@ -161,4 +161,13 @@ public class Inputter {
 		}
 		return response;
 	}
+
+	public static boolean confirmYesNo(String welcome) {
+		boolean result = false;
+		String confirm = inputPatternStr(welcome,"[yYnN]");
+		if ("Y".equalsIgnoreCase(confirm)) {
+			result = true;
+		}
+		return result;
+	}
 }

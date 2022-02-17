@@ -5,14 +5,14 @@
  */
 package controlller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import model.Employee;
 
 /**
  *
  * @author nguye
- * @param <E>
  */
-public interface I_EmployeeController<E> extends I_Controller<Employee> {
+public interface I_EmployeeController extends I_Controller<JsonNode,JsonNode> {
 
     public Employee login(String userName, String passWord) throws Exception;
 

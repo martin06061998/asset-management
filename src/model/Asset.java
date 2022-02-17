@@ -5,37 +5,62 @@
  */
 package model;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Serializable;
+import utils.StringUtilities;
 
 /**
  *
  * @author marti
  */
-public class Asset implements Serializable{
+public class Asset implements Serializable {
 
+	private static final long serialVersionUID = 4573101304386461231L;
 	final String assetID;
-	String assetName;
+	String name;
 	String color;
 	long price;
 	double weight;
 	int quantity;
-	int curQty = -1;
+	int curQty;
 
-	Asset(String assetID, String name, String color, long price, double weight, int quantity) {
-		this.assetID = assetID;
-		this.assetName = name;
-		this.color = color;
+	public Asset(String assetID, String name, String color, long price, double weight, int quantity) {
+		if (assetID == null || name == null || color == null) {
+			throw new IllegalArgumentException("arguments should not be null");
+		}
+		if (weight <= 0) {
+			throw new IllegalArgumentException("weight should not be zero or negagive");
+		}
+		if (price <= 0) {
+			throw new IllegalArgumentException("price should not be zero or negagive");
+		}
+		if (quantity <= 0) {
+			throw new IllegalArgumentException("quantity should not be zero or negagive");
+		}
+		this.assetID = StringUtilities.toLowerCasse(assetID);
+		this.name = StringUtilities.toLowerCasse(name);
+		this.color = StringUtilities.toLowerCasse(color);
 		this.price = price;
 		this.weight = weight;
 		this.quantity = quantity;
+		this.curQty = quantity;
 	}
 
-	public String getAssetName() {
-		return assetName;
+	public String getAssetID() {
+		return assetID;
 	}
 
-	public void setAssetName(String name) {
-		this.assetName = name;
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		if (name == null) {
+			throw new IllegalArgumentException("arguments should not be null");
+		}
+		this.name = StringUtilities.toLowerCasse(name);
 	}
 
 	public String getColor() {
@@ -43,7 +68,10 @@ public class Asset implements Serializable{
 	}
 
 	public void setColor(String color) {
-		this.color = color;
+		if (color == null) {
+			throw new IllegalArgumentException("arguments should not be null");
+		}
+		this.color = StringUtilities.toLowerCasse(color);
 	}
 
 	public long getPrice() {
@@ -51,6 +79,9 @@ public class Asset implements Serializable{
 	}
 
 	public void setPrice(long price) {
+		if (price <= 0) {
+			throw new IllegalArgumentException("price should not be zero or negagive");
+		}
 		this.price = price;
 	}
 
@@ -59,6 +90,9 @@ public class Asset implements Serializable{
 	}
 
 	public void setWeight(double weight) {
+		if (weight <= 0) {
+			throw new IllegalArgumentException("weight should not be zero or negagive");
+		}
 		this.weight = weight;
 	}
 
@@ -67,6 +101,9 @@ public class Asset implements Serializable{
 	}
 
 	public void setQuantity(int quantity) {
+		if (quantity <= 0) {
+			throw new IllegalArgumentException("quantity should not be zero or negagive");
+		}
 		this.quantity = quantity;
 	}
 
@@ -75,12 +112,25 @@ public class Asset implements Serializable{
 	}
 
 	public void setCurQty(int curQty) {
+		if (curQty < 0) {
+			throw new IllegalArgumentException("current quantity should not be negagive");
+		}
 		this.curQty = curQty;
 	}
 
-	@Override
-	public String toString() {
-		return "Asset{" + "assetID=" + assetID + ", assetName=" + assetName + ", color=" + color + ", price=" + price + ", weight=" + weight + ", quantity=" + quantity + ", curQty=" + curQty + '}';
+	public boolean isEnough(int offeredQty) {
+		return curQty > offeredQty;
 	}
 
+	public JsonNode toJsonNode() {
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode answer = mapper.createObjectNode();
+		answer.put("id", assetID);
+		answer.put("name", name);
+		answer.put("color", color);
+		answer.put("price", String.valueOf(price));
+		answer.put("weight", String.valueOf(weight));
+		answer.put("quantity", String.valueOf(quantity));
+		return answer;
+	}
 }

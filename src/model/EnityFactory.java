@@ -35,9 +35,5 @@ final public class EnityFactory {
 	public Asset createAsset(JsonNode item)  {
 		return (Asset) factory.factoryList.get(Asset.class).createInstance(item);
 	}
-
-	public <T extends Asset> Asset reforge(T oldVehicle,JsonNode request)  {
-		return null;
-		//return factory.factoryList.get(oldVehicle.getClass()).reforge(request);
-	} 
+	
 }

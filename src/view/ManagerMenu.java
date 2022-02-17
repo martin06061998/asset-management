@@ -9,8 +9,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.Iterator;
 import utils.Inputter;
-import utils.Utils;
 
 /**
  *
@@ -30,6 +30,17 @@ public class ManagerMenu extends AssetManagementMenu {
 		addItem("Approve the request of employee");
 		addItem("Show list of borrow asset");
 		addItem("Quit");
+	}
+
+	JsonNode searchAssetByName() {
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode request = mapper.createObjectNode();
+		request.put("key", getKey());
+		int command = rHandler.searchAssetsByName();
+		request.put("command", command);
+		String name = Inputter.inputNotBlankStr("Please enter name: ");
+		request.put("name", name);
+		return request;
 	}
 
 	/*
@@ -62,43 +73,138 @@ public class ManagerMenu extends AssetManagementMenu {
 			item.put("weight", String.valueOf(weight));
 			item.put("quantity", String.valueOf(quantity));
 			data.add(item);
-			isContinue = Utils.confirmYesNo("Do you want to continue[y/n]: ");
+			isContinue = confirmYesNo("Do you want to continue[y/n]: ");
 		}
 
 		request.set("data", data);
 		return request;
 	}
 
-	void loadSearchMenu() {
-		String name = Utils.getString("Enter the name you want to search: ");
+	JsonNode getAsset() {
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode request = mapper.createObjectNode();
+		request.put("key", getKey());
+		int command = rHandler.getAssetCommandID();
+		request.put("command", command);
+		String id = Inputter.inputNotBlankStr("Please enter the id of the asset you want to update");
+		request.put("id", id);
+		return request;
 	}
 
-	@Override
-	protected void searchAssetByName() {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	JsonNode updateAsset() {
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode request = mapper.createObjectNode();
+		ArrayNode data = mapper.createArrayNode();
+		request.put("key", getKey());
+		request.put("command", rHandler.updateAssetCommandID());
+		JsonNode searchRequest = getAsset();
+		JsonNode response = sendRequest(searchRequest);
+		String msg = response.get("message").asText();
+		if (!msg.equals("found")) {
+			return null;
+		}
+		ObjectNode asset = (ObjectNode) response.get("data").get(0);
+		Iterator<String> keys = asset.fieldNames();
+		String key;
+		while (keys.hasNext()) {
+			key = keys.next();
+			if (key.contains("id")) {
+				continue;
+			}
+			String value = asset.get(key).asText();
+			boolean makeChange = confirmYesNo("Do you you want to change " + key + " ( Old value: " + value + " ) [y/n]: ");
+			if (makeChange) {
+				String newValue = Inputter.inputNotBlankStr("Please enter new " + key + ": ");
+				asset.put(key, newValue);
+			}
+		}
+		data.add(asset);
+		request.set("data", data);
+		return request;
+	}
+
+	JsonNode approve() {
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode request = mapper.createObjectNode();
+		ArrayNode data = mapper.createArrayNode();
+		request.put("key", getKey());
+		int command = rHandler.approveBorrowCommandID();
+		request.put("command", command);
+		JsonNode handling = getHandlingRequest();
+		printArrayNode(handling);
+		boolean isContinue = true;
+		while (isContinue) {
+			String rID = Inputter.inputNotBlankStr("Please enter the request id");
+			data.add(rID);
+			isContinue = confirmYesNo("Do you want to continue[y/n]: ");
+		}
+		request.set("data", data);
+		return request;
+	}
+
+	JsonNode showBorrowList() {
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode request = mapper.createObjectNode();
+		request.put("key", getKey());
+		int command = rHandler.getBorrowListCommandID();
+		request.put("command", command);
+		return request;
+	}
+
+	private JsonNode getHandlingRequest() {
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode request = mapper.createObjectNode();
+		request.put("key", getKey());
+		int command = rHandler.getHandlingRequestsCommandID();
+		request.put("command", command);
+		return sendRequest(request);
 	}
 
 	/*
 	* Send request to server	*
 	 */
 	@Override
-	protected void sendRequest(JsonNode request) {
+	protected JsonNode sendRequest(JsonNode request) {
 		JsonNode reply = rHandler.handle(request);
-		printMessage(reply);
+		return reply;
 	}
 
 	@Override
 	protected void breadth() {
-		JsonNode request = null;
-		showMenu();
-		int choice = getChoice();
-		switch (choice) {
-			case 2:
-				request = addAsset();
-				break;
-			default:
-				break;
+		boolean isContinue = true;
+		while (isContinue) {
+			JsonNode request = null;
+			int choice = getChoice();
+			switch (choice) {
+				case 1:
+					request = searchAssetByName();
+					break;
+				case 2:
+					request = addAsset();
+					break;
+				case 3:
+					request = updateAsset();
+					break;
+				case 4:
+					request = approve();
+					break;
+				case 5:
+					request = showBorrowList();
+					break;
+				case 6:
+					isContinue = false;
+					break;
+				default:
+					break;
+			}
+			if (request != null) {
+				JsonNode reply = sendRequest(request);
+				printMessage(reply);
+				printArrayNode(reply);
+
+			}
+			System.out.println();
 		}
-		sendRequest(request);
 	}
+
 }

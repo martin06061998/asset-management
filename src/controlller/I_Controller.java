@@ -5,25 +5,21 @@
  */
 package controlller;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import java.util.List;
-
 /**
  *
  * @author marti
  */
-public interface I_Controller<E>  {
+public interface I_Controller<E,R>  {
 
-	List<E> getAll() throws Exception;
+	R getAll() throws Exception;
 	
-	public boolean save();
+	//public boolean save();
 	
-	public boolean load();
+	//public boolean load();
 	
-	public boolean add(JsonNode item) throws Exception;
+	public R add(E item) throws Exception;
 
-	public boolean delete(JsonNode target) throws Exception;
-
-	public E get(int pos) throws Exception;
+	public R delete(E target) throws Exception;
 	
+	public R get(String key) throws Exception;
 }

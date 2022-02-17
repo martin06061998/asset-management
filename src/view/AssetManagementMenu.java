@@ -8,12 +8,10 @@ package view;
 import com.fasterxml.jackson.databind.JsonNode;
 import controlller.RequestHandler;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.Objects;
+import utils.Inputter;
 import utils.StringUtilities;
-import utils.Utils;
 
 /**
  *
@@ -32,8 +30,8 @@ public abstract class AssetManagementMenu extends AbstractMenu<String> {
 	}
 
 	final static protected String promtForKey() {
-		String empID = Utils.getString("Please enter id: ");
-		String pwd = Utils.getString("Please enter the password: ");
+		String empID = Inputter.inputNotBlankStr("Employee ID: ");
+		String pwd = Inputter.inputNotBlankStr("Password: ");
 		return empID + pwd;
 	}
 
@@ -41,14 +39,12 @@ public abstract class AssetManagementMenu extends AbstractMenu<String> {
 		return key;
 	}
 
-	protected abstract void searchAssetByName();
-	
 	protected abstract void loadMainMenu();
 
-	protected abstract void sendRequest(JsonNode request);
+	protected abstract JsonNode sendRequest(JsonNode request);
 
 	protected abstract void breadth();
-	
+
 	protected static void printMessage(JsonNode node) {
 		System.out.println(node.get("message").asText());
 	}
@@ -62,50 +58,40 @@ public abstract class AssetManagementMenu extends AbstractMenu<String> {
 		return answer;
 	}
 
-	protected static void printData(JsonNode node) {
-		LinkedHashMap<String, Integer> keyMap = new LinkedHashMap<>();
-		HashMap<String, LinkedHashMap<String, Integer>> keyMapTable = new HashMap<>();
+	protected static void printArrayNode(JsonNode node) {
 		JsonNode dataElement = node.get("data");
-		if (dataElement.isArray()) {
-			String oldClass = null;
+		if (dataElement != null && dataElement.isArray()) {
 			if (dataElement.size() == 0) {
 				System.out.println("Nothing to show");
 			} else {
+				LinkedHashMap<String, Integer> keyMap = calculateSize(dataElement);
+				int length = 0;
+				for (int e : keyMap.values()) {
+					length += e;
+				}
+				String headerLine = StringUtilities.generateRepeatedString("*", length + (keyMap.size() - 1)*2 + 2);
+				String line = StringUtilities.generateRepeatedString("-", length + (keyMap.size() - 1)*2 + 2);
+				System.out.println(headerLine);
+				printHeader(keyMap);
+				System.out.println(headerLine);
+				StringUtilities.generateRepeatedString("-", length);
 				for (JsonNode element : dataElement) {
-					if (Objects.isNull(oldClass)) {
-						oldClass = (element.get("class")).asText();
-						keyMap = calculateSize(oldClass, node);
-						keyMapTable.put(oldClass, keyMap);
-						printHeader(keyMap);
-					} else {
-						String newClass = element.get("class").asText();
-						if (!oldClass.equals(newClass)) {
-							System.out.println("");
-							if (keyMapTable.containsKey(newClass)) {
-								keyMap = keyMapTable.get(newClass);
-							} else {
-								keyMap = calculateSize(newClass, node);
-							}
-							printHeader(keyMap);
-						}
-						oldClass = newClass;
-					}
-					printElement(element, keyMap);
+					printJsonNode(element, keyMap);
+					System.out.println(line);
+
 				}
 			}
 		}
 
 	}
 
-	protected static void printElement(JsonNode element, LinkedHashMap<String, Integer> keyMap) {
+	protected static void printJsonNode(JsonNode element, LinkedHashMap<String, Integer> keyMap) {
 		Iterator<String> fieldNames = element.fieldNames();
 		while (fieldNames.hasNext()) {
 			String field = fieldNames.next();
 			int numberOfCharacter = keyMap.get(field);
 			String value = element.get(field).asText();
-			//if (!field.contains("id") && !field.contains("year")) {
 			value = StringUtilities.toPretty(value);
-			//}
 			int padding = (numberOfCharacter - value.length()) / 2;
 			String leftAlign = StringUtilities.generateRepeatedString(" ", padding);
 			String rightAlign = StringUtilities.generateRepeatedString(" ", numberOfCharacter - padding - value.length());
@@ -127,27 +113,23 @@ public abstract class AssetManagementMenu extends AbstractMenu<String> {
 		System.out.println();
 	}
 
-	protected static LinkedHashMap<String, Integer> calculateSize(String clazz, JsonNode node) {
-		JsonNode dataElement = node.get("data");
+	protected static LinkedHashMap<String, Integer> calculateSize(JsonNode dataElement) {
 		LinkedHashMap<String, Integer> keyMap = new LinkedHashMap<>();
 		Iterator<JsonNode> iterator = dataElement.iterator();
 		while (iterator.hasNext()) {
 			JsonNode element = iterator.next();
 			Iterator<String> fieldNames = element.fieldNames();
-			if (!(element.get("class").asText()).equals(clazz)) {
-				continue;
-			}
 			while (fieldNames.hasNext()) {
 				String key = fieldNames.next();
 				String value = element.get(key).asText();
 				if (keyMap.containsKey(key)) {
-					int newLength = (int) Math.ceil(value.length() / BLOCK_SIZE) * BLOCK_SIZE + BLOCK_SIZE;
+					int newLength = (int) Math.round(value.length() / BLOCK_SIZE) * BLOCK_SIZE + BLOCK_SIZE;
 					int oldLength = keyMap.get(key);
 					if (newLength > oldLength) {
 						keyMap.put(key, newLength);
 					}
 				} else {
-					int newLength = (int) Math.ceil(value.length() / BLOCK_SIZE) * BLOCK_SIZE + BLOCK_SIZE;
+					int newLength = (int) Math.round(value.length() / BLOCK_SIZE) * BLOCK_SIZE + BLOCK_SIZE;
 					keyMap.put(key, newLength);
 				}
 			}

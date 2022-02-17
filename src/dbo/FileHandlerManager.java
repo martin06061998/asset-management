@@ -8,7 +8,6 @@ package dbo;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -32,22 +31,12 @@ final public class FileHandlerManager {
 		return manager;
 	}
 
-	public List<String> readText() throws Exception {
-		List<String> data = (List<String>) manager.handlerList.get("TextFileHandler").read();
-		return data;
+	public <T extends Serializable> void writeBinary(T data,String filePath) throws IOException {
+		manager.handlerList.get("BinaryFileHandler").write(data,filePath);
 	}
 
-	public void writeText(List<String> data) throws IOException {
-		manager.handlerList.get("TextFileHandler").write(data);
-	}
-
-	public <T extends Serializable> void writeBinary(T data) throws IOException {
-		manager.handlerList.get("BinaryFileHandler").write(data);
-	}
-
-	public Serializable readBinary() throws Exception {
-		System.out.println(Thread.currentThread().getStackTrace()[2].getClassName());
-		Serializable response = (Serializable) manager.handlerList.get("BinaryFileHandler").read();
+	public Serializable readBinary(String filePath) throws Exception {
+		Serializable response = (Serializable) manager.handlerList.get("BinaryFileHandler").read(filePath);
 		return response;
 	}
 }

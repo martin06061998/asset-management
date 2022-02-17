@@ -5,13 +5,13 @@
  */
 package controlller;
 
-import model.Asset;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  *
  * @author nguye
  */
-public interface I_AssetController<E> extends I_Controller<Asset> {
+public interface I_AssetController extends I_Controller<JsonNode,JsonNode> {
 
 	public boolean isAcceptable(String key, int command);
 }
