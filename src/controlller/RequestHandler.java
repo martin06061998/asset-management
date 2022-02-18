@@ -9,8 +9,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import utils.StringUtilities;
 
 /**
@@ -49,8 +47,12 @@ final public class RequestHandler {
 						String name = standard.get("name").asText();
 						reply = AssetController.getInstance().searchByName(name);
 						break;
-					case 6:
+					case 3:
 						JsonNode data = standard.get("data");
+						reply = AssetController.getInstance().borrowAsset(data);
+						break;
+					case 6:
+						data = standard.get("data");
 						if (data.isArray()) {
 							reply = AssetController.getInstance().add(data);
 						}
@@ -64,14 +66,14 @@ final public class RequestHandler {
 						reply = AssetController.getInstance().approve(data);
 						break;
 					case 9:
-						reply = AssetController.getInstance().getBorrowList();
+						reply = AssetController.getInstance().getAllApprovedRequests();
 						break;
 					case 10:
 						String id = standard.get("id").asText();
 						reply = (JsonNode) handler.controllers.get("asset").get(id);
 						break;
 					case 11:
-						reply = (JsonNode) AssetController.getInstance().handlingRequest();
+						reply = (JsonNode) AssetController.getInstance().getAllWaitingRequests();
 						break;
 					default:
 						break;
@@ -85,7 +87,7 @@ final public class RequestHandler {
 			}
 
 		} catch (Exception ex) {
-			Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
+
 		}
 		return reply;
 	}
@@ -121,7 +123,9 @@ final public class RequestHandler {
 	public int getAllAssets() {
 		return 2;
 	}
-
+	public int getBorrowAssetCommandID(){
+		return 3;
+	}
 	public int getPrivilege(String key) {
 		return ((EmpController) controllers.get("emp")).getPrivilege(key);
 	}

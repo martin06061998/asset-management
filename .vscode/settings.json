@@ -1,0 +1,10 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "third-party-libary/jackson-annotations-2.13.1.jar",
+        "third-party-libary/jackson-core-2.13.1.jar",
+        "third-party-libary/jackson-databind-2.13.1.jar",
+        "third-party-libary/jackson-databind-2.13.1-javadoc.jar",
+        "third-party-libary/javax.json-1.1.4.jar"
+    ]
+}

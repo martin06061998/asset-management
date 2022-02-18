@@ -6,7 +6,9 @@
 package controlller;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.Date;
+
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import model.Employee;
 import model.Employee.Sex;
@@ -35,18 +37,21 @@ final class EmpController implements I_EmployeeController {
 	}
 
 	private static HashMap<String, Employee> seedData() {
-		HashMap<String, Employee> ret = new HashMap<>();
-		Employee emp1 = new Employee("E160001", "Nguyen Hong Hiep", new Date(2000 - 1900, 06, 12), "EM", Sex.female, "12345678");
-		Employee emp2 = new Employee("E160240", "Tran Dinh Khanh", new Date(2002 - 1900, 07, 15), "EM", Sex.male, "12345678");
-		Employee emp3 = new Employee("E140449", "Le Buu Nhan", new Date(2002 - 1900, 07, 10), "EM", Sex.male, "12345678");
-		Employee emp4 = new Employee("E160798", "Truong Le Minh", new Date(2002 - 1900, 12, 03), "EM", Sex.male, "12345678");
-		Employee emp5 = new Manager("E000000", "Hoa Doan", new Date(1990 - 1900, 06, 05), "MA", Sex.male, "12345678");
+		HashMap<String, Employee> ret = null;
+		Calendar.getInstance().set(2000 + 1990, 06, 12);
+		ret = new HashMap<>();
+		Employee emp1 = new Employee("E160001", "Nguyen Hong Hiep", new GregorianCalendar(2000, Calendar.JUNE, 11).getTime(), "EM", Sex.female, "e10adc3949ba59abbe56e057f20f883e");
+		Employee emp2 = new Employee("E160240", "Tran Dinh Khanh", new GregorianCalendar(2000, Calendar.JULY, 15).getTime(), "EM", Sex.male, "e10adc3949ba59abbe56e057f20f883e");
+		Employee emp3 = new Employee("E140449", "Le Buu Nhan", new GregorianCalendar(2002, Calendar.JULY, 10).getTime(), "EM", Sex.male, "e10adc3949ba59abbe56e057f20f883e");
+		Employee emp4 = new Employee("E160798", "Truong Le Minh", new GregorianCalendar(2000, Calendar.SEPTEMBER, 3).getTime(), "EM", Sex.male, "e10adc3949ba59abbe56e057f20f883e");
+		Employee emp5 = new Manager("E000000", "Hoa Doan", new GregorianCalendar(1990, Calendar.JUNE, 8).getTime(), "MA", Sex.male, "e10adc3949ba59abbe56e057f20f883e");
 
-		ret.put(emp1.getEmpID() + emp1.getPassword(), emp1);
-		ret.put(emp2.getEmpID() + emp2.getPassword(), emp2);
-		ret.put(emp3.getEmpID() + emp3.getPassword(), emp3);
-		ret.put(emp4.getEmpID() + emp4.getPassword(), emp4);
-		ret.put(emp5.getEmpID() + emp5.getPassword(), emp5);
+		ret.put(emp1.getEmpID(), emp1);
+		ret.put(emp2.getEmpID(), emp2);
+		ret.put(emp3.getEmpID(), emp3);
+		ret.put(emp4.getEmpID(), emp4);
+		ret.put(emp5.getEmpID(), emp5);
+
 		return ret;
 	}
 
@@ -75,20 +80,37 @@ final class EmpController implements I_EmployeeController {
 		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
+	boolean isEmpIDValid(String empID) {
+		final String regex = "e\\d{6}";
+		return !(empID == null || !empID.matches(regex));
+	}
+
+	Employee getEmployeeByID(String empID) {
+		if (!isEmpIDValid(empID)) {
+			return null;
+		}
+		return empMap.get(empID);
+	}
+
+	boolean isEmployeeExist(String empID){
+		return getEmployeeByID(empID) != null;
+	}
+	
 	int getPrivilege(String key) {
-		Integer ret = null;
-		if (key == null || key.length() < 15) {
+                final String regex = "e\\d{6}.{1,35}";
+		int ret = 0;
+		if (key == null || !key.matches(regex)) {
 			ret = 0;
 		} else {
-			String standardKey = key.substring(0, 8).toLowerCase() + key.substring(8, key.length());
-			Employee e = empMap.get(standardKey);
-			if (e == null) {
+			final String userName = key.substring(0, 7).toLowerCase();
+                        final String password = key.substring(7);
+			final Employee e = empMap.get(userName);
+			if (e == null || !e.getPassword().equals(password)) {
 				ret = 0;
-			} else if (e.getClass() == Employee.class) {
-				ret = 5;
-			} else {
-				ret = 3000;
-			}
+			} else if(e.getClass() == Manager.class)
+                            ret = 3000;
+                        else
+                            ret = 5;
 		}
 		return ret;
 	}

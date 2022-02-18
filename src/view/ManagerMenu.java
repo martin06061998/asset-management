@@ -32,17 +32,6 @@ public class ManagerMenu extends AssetManagementMenu {
 		addItem("Quit");
 	}
 
-	JsonNode searchAssetByName() {
-		ObjectMapper mapper = new ObjectMapper();
-		ObjectNode request = mapper.createObjectNode();
-		request.put("key", getKey());
-		int command = rHandler.searchAssetsByName();
-		request.put("command", command);
-		String name = Inputter.inputNotBlankStr("Please enter name: ");
-		request.put("name", name);
-		return request;
-	}
-
 	/*
 	*Create a request to add assets
 	*
@@ -131,6 +120,11 @@ public class ManagerMenu extends AssetManagementMenu {
 		int command = rHandler.approveBorrowCommandID();
 		request.put("command", command);
 		JsonNode handling = getHandlingRequest();
+		int size = Integer.parseInt(handling.get("size").asText());
+		if (size == 0) {
+			System.out.println("Nothing to approve");
+			return null;
+		}
 		printArrayNode(handling);
 		boolean isContinue = true;
 		while (isContinue) {
@@ -160,14 +154,6 @@ public class ManagerMenu extends AssetManagementMenu {
 		return sendRequest(request);
 	}
 
-	/*
-	* Send request to server	*
-	 */
-	@Override
-	protected JsonNode sendRequest(JsonNode request) {
-		JsonNode reply = rHandler.handle(request);
-		return reply;
-	}
 
 	@Override
 	protected void breadth() {
@@ -206,5 +192,4 @@ public class ManagerMenu extends AssetManagementMenu {
 			System.out.println();
 		}
 	}
-
 }

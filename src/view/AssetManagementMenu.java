@@ -6,10 +6,15 @@
 package view;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import controlller.RequestHandler;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import utils.EncryptionMD5;
 import utils.Inputter;
 import utils.StringUtilities;
 
@@ -30,9 +35,15 @@ public abstract class AssetManagementMenu extends AbstractMenu<String> {
 	}
 
 	final static protected String promtForKey() {
-		String empID = Inputter.inputNotBlankStr("Employee ID: ");
-		String pwd = Inputter.inputNotBlankStr("Password: ");
-		return empID + pwd;
+		String key = null;
+		try {
+			String empID = Inputter.inputNotBlankStr("Employee ID: ");
+			String pwd = Inputter.inputNotBlankStr("Password: ");
+			key = empID + EncryptionMD5.encryptionMD5(pwd);
+		} catch (Exception ex) {
+			Logger.getLogger(AssetManagementMenu.class.getName()).log(Level.SEVERE, null, ex);
+		}
+		return key;
 	}
 
 	protected String getKey() {
@@ -40,8 +51,6 @@ public abstract class AssetManagementMenu extends AbstractMenu<String> {
 	}
 
 	protected abstract void loadMainMenu();
-
-	protected abstract JsonNode sendRequest(JsonNode request);
 
 	protected abstract void breadth();
 
@@ -53,10 +62,38 @@ public abstract class AssetManagementMenu extends AbstractMenu<String> {
 		return node.get("status").asText();
 	}
 
+	protected JsonNode searchAssetByName() {
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode request = mapper.createObjectNode();
+		request.put("key", getKey());
+		int command = rHandler.searchAssetsByName();
+		request.put("command", command);
+		String name = Inputter.inputNotBlankStr("Please enter name: ");
+		request.put("name", name);
+		return request;
+	}
+
+        protected String getUserID(){
+            return key.substring(0,7);
+        }
+        
+        protected String getPassword(){
+            return key.substring(7);
+        }
+	/*
+	* Send request to server	*
+	 */
+	protected JsonNode sendRequest(JsonNode request) {
+		JsonNode reply = rHandler.handle(request);
+		return reply;
+	}
+
 	final static protected int getPrivilege(String key) {
 		int answer = rHandler.getPrivilege(key);
 		return answer;
 	}
+        
+        
 
 	protected static void printArrayNode(JsonNode node) {
 		JsonNode dataElement = node.get("data");
@@ -69,8 +106,8 @@ public abstract class AssetManagementMenu extends AbstractMenu<String> {
 				for (int e : keyMap.values()) {
 					length += e;
 				}
-				String headerLine = StringUtilities.generateRepeatedString("*", length + (keyMap.size() - 1)*2 + 2);
-				String line = StringUtilities.generateRepeatedString("-", length + (keyMap.size() - 1)*2 + 2);
+				String headerLine = StringUtilities.generateRepeatedString("*", length + (keyMap.size() - 1) * 2 + 2);
+				String line = StringUtilities.generateRepeatedString("-", length + (keyMap.size() - 1) * 2 + 2);
 				System.out.println(headerLine);
 				printHeader(keyMap);
 				System.out.println(headerLine);
@@ -115,21 +152,22 @@ public abstract class AssetManagementMenu extends AbstractMenu<String> {
 
 	protected static LinkedHashMap<String, Integer> calculateSize(JsonNode dataElement) {
 		LinkedHashMap<String, Integer> keyMap = new LinkedHashMap<>();
-		Iterator<JsonNode> iterator = dataElement.iterator();
-		while (iterator.hasNext()) {
-			JsonNode element = iterator.next();
+		for (JsonNode element : dataElement) {
 			Iterator<String> fieldNames = element.fieldNames();
 			while (fieldNames.hasNext()) {
 				String key = fieldNames.next();
 				String value = element.get(key).asText();
 				if (keyMap.containsKey(key)) {
-					int newLength = (int) Math.round(value.length() / BLOCK_SIZE) * BLOCK_SIZE + BLOCK_SIZE;
+					int newLength = (int) Math.ceil(value.length() / BLOCK_SIZE) * BLOCK_SIZE + BLOCK_SIZE;
 					int oldLength = keyMap.get(key);
 					if (newLength > oldLength) {
 						keyMap.put(key, newLength);
 					}
 				} else {
-					int newLength = (int) Math.round(value.length() / BLOCK_SIZE) * BLOCK_SIZE + BLOCK_SIZE;
+					int newLength = (int) Math.ceil(value.length() / BLOCK_SIZE) * BLOCK_SIZE + BLOCK_SIZE;
+					if (newLength < key.length()) {
+						newLength = (int) Math.ceil(key.length() / BLOCK_SIZE) * BLOCK_SIZE + BLOCK_SIZE;
+					}
 					keyMap.put(key, newLength);
 				}
 			}

@@ -6,6 +6,7 @@
 package model;
 
 import java.util.Date;
+import utils.EncryptionMD5;
 import utils.StringUtilities;
 
 /**
@@ -25,7 +26,7 @@ public class Employee {
 	Sex sex;
 	String password;
 
-	public Employee(String employeeID, String name, Date birthDate, String role, Sex sex, String password) {
+	public Employee(String employeeID, String name, Date birthDate, String role, Sex sex, String password)  {
 		if (employeeID == null || name == null || birthDate == null || role == null || sex == null || password == null) {
 			throw new IllegalArgumentException("arguments should not be null");
 		}
