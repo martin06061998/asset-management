@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import controlller.RequestHandler;
 import utils.Inputter;
 
 /**
@@ -35,7 +36,7 @@ public class EmployeeMenu extends AssetManagementMenu {
         ObjectNode request = mapper.createObjectNode();
         ArrayNode data = mapper.createArrayNode();
         request.put("key", getKey());
-        int command = rHandler.getBorrowAssetCommandID();
+        int command = RequestHandler.BORROW_ASSET;
         request.put("command", String.valueOf(command));
         System.out.println("Welcome To Borrow Asset Menu");
 

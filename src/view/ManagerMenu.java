@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import controlller.RequestHandler;
 import java.util.Iterator;
 import utils.Inputter;
 
@@ -41,7 +42,7 @@ public class ManagerMenu extends AssetManagementMenu {
 		ObjectNode request = mapper.createObjectNode();
 		ArrayNode data = mapper.createArrayNode();
 		request.put("key", getKey());
-		int command = rHandler.addAssetCommandID();
+		int command = RequestHandler.ADD_ASSET;
 		request.put("command", String.valueOf(command));
 		System.out.println("Welcome To Asset Add Form: ");
 
@@ -73,7 +74,7 @@ public class ManagerMenu extends AssetManagementMenu {
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode request = mapper.createObjectNode();
 		request.put("key", getKey());
-		int command = rHandler.getAssetCommandID();
+		int command = RequestHandler.GET_ASSET;
 		request.put("command", command);
 		String id = Inputter.inputNotBlankStr("Please enter the id of the asset you want to update");
 		request.put("id", id);
@@ -85,7 +86,7 @@ public class ManagerMenu extends AssetManagementMenu {
 		ObjectNode request = mapper.createObjectNode();
 		ArrayNode data = mapper.createArrayNode();
 		request.put("key", getKey());
-		request.put("command", rHandler.updateAssetCommandID());
+		request.put("command", RequestHandler.GET_ASSET);
 		JsonNode searchRequest = getAsset();
 		JsonNode response = sendRequest(searchRequest);
 		String msg = response.get("message").asText();
@@ -117,7 +118,7 @@ public class ManagerMenu extends AssetManagementMenu {
 		ObjectNode request = mapper.createObjectNode();
 		ArrayNode data = mapper.createArrayNode();
 		request.put("key", getKey());
-		int command = rHandler.approveBorrowCommandID();
+		int command = RequestHandler.APPROVE_BORROW_REQUEST;
 		request.put("command", command);
 		JsonNode handling = getHandlingRequest();
 		int size = Integer.parseInt(handling.get("size").asText());
@@ -140,7 +141,7 @@ public class ManagerMenu extends AssetManagementMenu {
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode request = mapper.createObjectNode();
 		request.put("key", getKey());
-		int command = rHandler.getBorrowListCommandID();
+		int command = RequestHandler.GET_ALL_APPROVED_REQUESTS;
 		request.put("command", command);
 		return request;
 	}
@@ -149,7 +150,7 @@ public class ManagerMenu extends AssetManagementMenu {
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode request = mapper.createObjectNode();
 		request.put("key", getKey());
-		int command = rHandler.getHandlingRequestsCommandID();
+		int command = RequestHandler.GET_ALL_WAITING_REQUESTS;
 		request.put("command", command);
 		return sendRequest(request);
 	}

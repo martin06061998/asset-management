@@ -6,7 +6,6 @@
 package model;
 
 import java.util.Date;
-import utils.EncryptionMD5;
 import utils.StringUtilities;
 
 /**

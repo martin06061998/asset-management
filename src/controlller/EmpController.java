@@ -38,13 +38,12 @@ final class EmpController implements I_EmployeeController {
 
 	private static HashMap<String, Employee> seedData() {
 		HashMap<String, Employee> ret = null;
-		Calendar.getInstance().set(2000 + 1990, 06, 12);
 		ret = new HashMap<>();
-		Employee emp1 = new Employee("E160001", "Nguyen Hong Hiep", new GregorianCalendar(2000, Calendar.JUNE, 11).getTime(), "EM", Sex.female, "e10adc3949ba59abbe56e057f20f883e");
+		Employee emp1 = new Employee("E160001", "Nguyen Hong Hiep", new GregorianCalendar(2000, Calendar.JUNE, 12).getTime(), "EM", Sex.female, "e10adc3949ba59abbe56e057f20f883e");
 		Employee emp2 = new Employee("E160240", "Tran Dinh Khanh", new GregorianCalendar(2000, Calendar.JULY, 15).getTime(), "EM", Sex.male, "e10adc3949ba59abbe56e057f20f883e");
 		Employee emp3 = new Employee("E140449", "Le Buu Nhan", new GregorianCalendar(2002, Calendar.JULY, 10).getTime(), "EM", Sex.male, "e10adc3949ba59abbe56e057f20f883e");
-		Employee emp4 = new Employee("E160798", "Truong Le Minh", new GregorianCalendar(2000, Calendar.SEPTEMBER, 3).getTime(), "EM", Sex.male, "e10adc3949ba59abbe56e057f20f883e");
-		Employee emp5 = new Manager("E000000", "Hoa Doan", new GregorianCalendar(1990, Calendar.JUNE, 8).getTime(), "MA", Sex.male, "e10adc3949ba59abbe56e057f20f883e");
+		Employee emp4 = new Employee("E160798", "Truong Le Minh", new GregorianCalendar(2002, Calendar.SEPTEMBER, 12).getTime(), "EM", Sex.male, "e10adc3949ba59abbe56e057f20f883e");
+		Employee emp5 = new Manager("E000000", "Hoa Doan", new GregorianCalendar(1990, Calendar.JUNE, 5).getTime(), "MA", Sex.male, "e10adc3949ba59abbe56e057f20f883e");
 
 		ret.put(emp1.getEmpID(), emp1);
 		ret.put(emp2.getEmpID(), emp2);
@@ -97,7 +96,7 @@ final class EmpController implements I_EmployeeController {
 	}
 	
 	int getPrivilege(String key) {
-                final String regex = "e\\d{6}.{1,35}";
+                final String regex = "[Ee]\\d{6}.{1,35}";
 		int ret = 0;
 		if (key == null || !key.matches(regex)) {
 			ret = 0;

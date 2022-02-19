@@ -131,6 +131,7 @@ public class Asset implements Serializable {
 		answer.put("price", String.valueOf(price));
 		answer.put("weight", String.valueOf(weight));
 		answer.put("quantity", String.valueOf(quantity));
+                answer.put("Current quantity", String.valueOf(curQty));
 		return answer;
 	}
 }
