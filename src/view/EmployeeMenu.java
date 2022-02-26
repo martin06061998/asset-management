@@ -47,7 +47,6 @@ public class EmployeeMenu extends AssetManagementMenu {
             ObjectNode item = mapper.createObjectNode();
             item.put("assetID", assetID);
             item.put("quantity", String.valueOf(quantity));
-            item.put("empID", this.getUserID());
             data.add(item);
             isContinue = confirmYesNo("Do you want to continue[y/n]: ");
         }
@@ -56,6 +55,38 @@ public class EmployeeMenu extends AssetManagementMenu {
         return request;
     }
 
+    JsonNode cancelRequest() {
+        JsonNode handling = getWaitingRequests();
+        int size = Integer.parseInt(handling.get("size").asText());
+        if (size == 0) {
+            System.out.println("Nothing to cancel");
+            return null;
+        }
+        printArrayNode(handling);
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode request = mapper.createObjectNode();
+        ArrayNode data = mapper.createArrayNode();
+        request.put("key", getKey());
+        int command = RequestHandler.CANCEL_REQUEST;
+        request.put("command", String.valueOf(command));
+        System.out.println("Welcome To Cancel Request Menu");
+
+        boolean isContinue = true;
+        while (isContinue) {
+            String id = Inputter.inputNotBlankStr("Please enter id of the request: ");
+            ObjectNode item = mapper.createObjectNode();
+            item.put("id", id);
+            data.add(item);
+            isContinue = confirmYesNo("Do you want to continue[y/n]: ");
+        }
+
+        request.set("data", data);
+        return request;
+    }
+
+    
+    
+    
     @Override
     protected void breadth() {
         boolean isContinue = true;
@@ -70,9 +101,10 @@ public class EmployeeMenu extends AssetManagementMenu {
                     request = borrowAsset();
                     break;
                 case 3:
-
+                    request = cancelRequest();
                     break;
                 case 4:
+                    System.out.println("Not supported yet");
                     break;
                 case 5:
                     isContinue = false;

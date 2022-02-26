@@ -19,12 +19,13 @@ final public class RequestHandler {
 
     public final static int SEARCH_ASSET_BY_NAME = 2;
     public final static int BORROW_ASSET = 3;
+    public final static int CANCEL_REQUEST = 4;
     public final static int ADD_ASSET = 6;
     public final static int UPDATE_ASSET = 7;
     public final static int APPROVE_BORROW_REQUEST = 8;
-    public final static int GET_ALL_APPROVED_REQUESTS = 9;
+    public final static int GET_ALL_APPROVED_REQUESTS = 1;
     public final static int GET_ASSET = 10;
-    public final static int GET_ALL_WAITING_REQUESTS = 11;
+    public final static int GET_ALL_WAITING_REQUESTS = 0;
 
     private static RequestHandler handler = null;
     private HashMap<String, I_Controller> controllers;
@@ -41,30 +42,42 @@ final public class RequestHandler {
 
     public JsonNode handle(JsonNode request) {
         JsonNode reply = null;
+        ObjectMapper mapper = new ObjectMapper();
         try {
-            ObjectMapper mapper = new ObjectMapper();
+
             String key = request.get("key").asText();
             String command = request.get("command").asText();
             AssetController controller = (AssetController) controllers.get("asset");
             boolean isAccepted = controller.isAcceptable(key, Integer.valueOf(command));
             if (isAccepted) {
+                final String empID = key.substring(0, 7).toLowerCase();
                 String jsonString = StringUtilities.toLowerCasse(request.toString());
                 JsonNode standard = mapper.readTree(jsonString);
                 int commandId = Integer.valueOf(command);
                 switch (commandId) {
+                    case 0:
+                        int privilege = getPrivilege(key);
+                        reply = (JsonNode) AssetController.getInstance().getAllWaitingRequests(privilege, empID);
+                        break;
+                    case 1:
+                        privilege = getPrivilege(key);
+                        reply = AssetController.getInstance().getAllApprovedRequests(privilege, empID);
+                        break;
                     case 2:
                         String name = standard.get("name").asText();
                         reply = AssetController.getInstance().searchByName(name);
                         break;
                     case 3:
                         JsonNode data = standard.get("data");
-                        reply = AssetController.getInstance().borrowAsset(data);
+                        reply = AssetController.getInstance().borrowAsset(empID, data);
+                        break;
+                    case 4:
+                        data = standard.get("data");
+                        reply = AssetController.getInstance().cancelRequest(empID, data);
                         break;
                     case 6:
                         data = standard.get("data");
-                        if (data.isArray()) {
-                            reply = AssetController.getInstance().add(data);
-                        }
+                        reply = AssetController.getInstance().add(data);
                         break;
                     case 7:
                         data = standard.get("data");
@@ -74,15 +87,9 @@ final public class RequestHandler {
                         data = standard.get("data");
                         reply = AssetController.getInstance().approve(data);
                         break;
-                    case 9:
-                        reply = AssetController.getInstance().getAllApprovedRequests();
-                        break;
                     case 10:
                         String id = standard.get("id").asText();
                         reply = (JsonNode) handler.controllers.get("asset").get(id);
-                        break;
-                    case 11:
-                        reply = (JsonNode) AssetController.getInstance().getAllWaitingRequests();
                         break;
                     default:
                         break;
@@ -91,12 +98,17 @@ final public class RequestHandler {
             } else {
                 ObjectNode err = mapper.createObjectNode();
                 err.put("status", "not accepted");
-                err.put("message", "bad request");
+                err.put("message", "wrong username or password");
+                err.set("data", mapper.createArrayNode());
                 reply = err;
             }
 
         } catch (Exception ex) {
-
+            ObjectNode err = mapper.createObjectNode();
+            err.put("status", "not accepted");
+            err.put("message", "bad request");
+            err.set("data", mapper.createArrayNode());
+            reply = err;
         }
         return reply;
     }

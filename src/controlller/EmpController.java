@@ -6,19 +6,20 @@
 package controlller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import dbo.EmployeeDBO;
+import java.io.Serializable;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import model.Employee;
-import model.Employee.Sex;
 import model.Manager;
 
 /**
  *
  * @author marti
  */
-final class EmpController implements I_EmployeeController {
+final class EmpController implements I_EmployeeController,Serializable {
 
 	private static EmpController controller = null;
 	private HashMap<String, Employee> empMap = null;
@@ -29,31 +30,32 @@ final class EmpController implements I_EmployeeController {
 	static EmpController getInstance() {
 		if (controller == null) {
 			controller = new EmpController();
-			controller.empMap = new HashMap<>();
-			controller.empMap.putAll(seedData());
-
+			//controller.empMap = new HashMap<>();
+			seedData();
+                        controller.empMap = EmployeeDBO.load();
 		}
 		return controller;
 	}
 
 	private static HashMap<String, Employee> seedData() {
-		HashMap<String, Employee> ret = null;
-		ret = new HashMap<>();
-		Employee emp1 = new Employee("E160001", "Nguyen Hong Hiep", new GregorianCalendar(2000, Calendar.JUNE, 12).getTime(), "EM", Sex.female, "e10adc3949ba59abbe56e057f20f883e");
-		Employee emp2 = new Employee("E160240", "Tran Dinh Khanh", new GregorianCalendar(2000, Calendar.JULY, 15).getTime(), "EM", Sex.male, "e10adc3949ba59abbe56e057f20f883e");
-		Employee emp3 = new Employee("E140449", "Le Buu Nhan", new GregorianCalendar(2002, Calendar.JULY, 10).getTime(), "EM", Sex.male, "e10adc3949ba59abbe56e057f20f883e");
-		Employee emp4 = new Employee("E160798", "Truong Le Minh", new GregorianCalendar(2002, Calendar.SEPTEMBER, 12).getTime(), "EM", Sex.male, "e10adc3949ba59abbe56e057f20f883e");
-		Employee emp5 = new Manager("E000000", "Hoa Doan", new GregorianCalendar(1990, Calendar.JUNE, 5).getTime(), "MA", Sex.male, "e10adc3949ba59abbe56e057f20f883e");
+		HashMap<String, Employee> ret = new HashMap<>();
+		Employee emp1 = new Employee("E160001", "Nguyen Hong Hiep", new GregorianCalendar(2000, Calendar.JUNE, 12).getTime(), "EM", true, "e10adc3949ba59abbe56e057f20f883e");
+		Employee emp2 = new Employee("E160240", "Tran Dinh Khanh", new GregorianCalendar(2000, Calendar.JULY, 15).getTime(), "EM", true, "e10adc3949ba59abbe56e057f20f883e");
+		Employee emp3 = new Employee("E140449", "Le Buu Nhan", new GregorianCalendar(2002, Calendar.JULY, 10).getTime(), "EM", true, "e10adc3949ba59abbe56e057f20f883e");
+		Employee emp4 = new Employee("E160798", "Truong Le Minh", new GregorianCalendar(2002, Calendar.DECEMBER, 3).getTime(), "EM", true, "e10adc3949ba59abbe56e057f20f883e");
+		Employee emp5 = new Manager("E160052", "Hoa Doan", new GregorianCalendar(1990, Calendar.JUNE, 5).getTime(), "MA", true, "e10adc3949ba59abbe56e057f20f883e");
+                
 
 		ret.put(emp1.getEmpID(), emp1);
 		ret.put(emp2.getEmpID(), emp2);
 		ret.put(emp3.getEmpID(), emp3);
 		ret.put(emp4.getEmpID(), emp4);
 		ret.put(emp5.getEmpID(), emp5);
-
+                EmployeeDBO.save(ret);
 		return ret;
 	}
-
+        
+        
 	@Override
 	public Employee login(String userName, String passWord) throws Exception {
 		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.

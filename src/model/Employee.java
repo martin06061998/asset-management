@@ -5,6 +5,7 @@
  */
 package model;
 
+import java.io.Serializable;
 import java.util.Date;
 import utils.StringUtilities;
 
@@ -12,21 +13,16 @@ import utils.StringUtilities;
  *
  * @author marti The root class of the entity hierarchy hierarchy
  */
-public class Employee {
-
-	public enum Sex {
-		male,
-		female
-	}
+public class Employee implements Serializable {
 	final String empID;
 	String name;
 	Date birthDate;
 	String role;
-	Sex sex;
+	boolean sex; // true if male
 	String password;
 
-	public Employee(String employeeID, String name, Date birthDate, String role, Sex sex, String password)  {
-		if (employeeID == null || name == null || birthDate == null || role == null || sex == null || password == null) {
+	public Employee(String employeeID, String name, Date birthDate, String role, boolean sex, String password)  {
+		if (employeeID == null || name == null || birthDate == null || role == null || password == null) {
 			throw new IllegalArgumentException("arguments should not be null");
 		}
 		this.empID = StringUtilities.toLowerCasse(employeeID);;
@@ -75,14 +71,11 @@ public class Employee {
 		this.role = StringUtilities.toLowerCasse(role);
 	}
 
-	public Sex getSex() {
+	public boolean getSex() {
 		return sex;
 	}
 
-	public void setSex(Sex sex) {
-		if (sex == null) {
-			throw new IllegalArgumentException("arguments should not be null");
-		}
+	public void setSex(boolean sex) {
 		this.sex = sex;
 	}
 
@@ -96,4 +89,5 @@ public class Employee {
 		}
 		this.password = password;
 	}
+
 }

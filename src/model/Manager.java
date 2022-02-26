@@ -13,7 +13,7 @@ import java.util.Date;
  */
 public class Manager extends Employee{
 
-	public Manager(String employeeID, String name, Date birthDate, String role, Sex sex, String password)  {
+	public Manager(String employeeID, String name, Date birthDate, String role, boolean sex, String password)  {
 		super(employeeID, name, birthDate, role, sex, password);
 	}
 	

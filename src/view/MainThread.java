@@ -14,23 +14,24 @@ import java.util.ArrayList;
 public class MainThread extends Menu<String> {
 
     private MainThread() {
-        choiceList = new ArrayList();
+        choiceList = new ArrayList<>();
         this.addItem("Sign in");
         this.addItem("Logout");
     }
 
-    private boolean coreBreadth() {
+    private boolean breadth() {
         AssetManagementMenu menu;
         String key = AssetManagementMenu.promtForKey();
         int pri = AssetManagementMenu.getPrivilege(key);
         if (pri == 0) {
-            System.out.println("Wrong username or password");
+            System.out.println("Incorrect id or password");
             return false;
         } else if (pri < 6) {
             menu = new EmployeeMenu(key);
         } else {
             menu = new ManagerMenu(key);
         }
+        System.out.println("Successfully");
         menu.breadth();
         return true;
     }
@@ -44,14 +45,15 @@ public class MainThread extends Menu<String> {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        MainThread mainMenu = new MainThread();
+        
+        MainThread kernel = new MainThread();
         boolean isContinue = true;
         int count = 0;
         while (isContinue) {
-            int choice = mainMenu.getChoice();
+            int choice = kernel.getChoice();
             switch (choice) {
                 case 1:
-                    boolean success = mainMenu.coreBreadth();
+                    boolean success = kernel.breadth();
                     if (!success) {
                         count++;
                     } else {
@@ -59,14 +61,14 @@ public class MainThread extends Menu<String> {
                     }
                     break;
                 case 2:
-                    mainMenu.logout();
+                    kernel.logout();
                     break;
                 default:
                     break;
             }
             if (count == 5) {
                 System.out.println("To many fail");
-                mainMenu.logout();
+                kernel.logout();
             }
         }
     }

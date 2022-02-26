@@ -18,17 +18,15 @@ import model.BorrowAsset;
  */
 public class AssetDBO {
 
-    private final static String ASSET_FILE = "src\\dbo\\asset.dat";
-    private final static String DONE_FILE = "src\\dbo\\borrow.dat";
-    private final static String HANDLING_FILE = "src\\dbo\\request.dat";
-    private final static String BORROW_SYSTEM_FILE = "src\\dbo\\borrowsystem.dat";
+    private final static String ASSET_FILE = "database\\asset.dat";
+    private final static String DONE_FILE = "database\\borrow.dat";
+    private final static String HANDLING_FILE = "database\\request.dat";
+    private final static String BORROW_SYSTEM_FILE = "database\\borrowsystem.dat";
 
     private AssetDBO() {
     }
 
-    ;
-	
-	public static boolean saveAssets(HashMap<String, Asset> assetMap) {
+    public static boolean saveAssets(HashMap<String, Asset> assetMap) {
         boolean ret = true;
         try {
             Objects.requireNonNull(assetMap);
@@ -40,17 +38,17 @@ public class AssetDBO {
         return ret;
     }
 
-    public static Serializable loadAssets() {
+    public static HashMap<String, Asset> loadAssets() {
         Serializable savedAssets = null;
         try {
-            savedAssets =  FileHandlerManager.getInstance().readBinary(ASSET_FILE);
+            savedAssets = FileHandlerManager.getInstance().readBinary(ASSET_FILE);
         } catch (Exception ex) {
             //Logger.getLogger(AssetDBO.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return savedAssets;
+        return (HashMap<String, Asset>) savedAssets;
     }
 
-    public static boolean backupBorrowState(HashMap<Integer, HashMap<String, BorrowAsset>> waiting, HashMap<Integer, HashMap<String, BorrowAsset>> approved) {
+    public static boolean saveBorrowState(HashMap<Integer, HashMap<Integer, BorrowAsset>> waiting, HashMap<Integer, HashMap<Integer, BorrowAsset>> approved) {
         boolean ret = true;
         try {
             FileHandlerManager.getInstance().writeBinary(approved, DONE_FILE);
@@ -62,20 +60,20 @@ public class AssetDBO {
         return ret;
     }
 
-    public static boolean restoreBorrowState(HashMap<Integer, HashMap<String, BorrowAsset>> handling, HashMap<Integer, HashMap<String, BorrowAsset>> done) {
-        boolean ret = true;
-        HashMap<Integer, HashMap<String, BorrowAsset>> savedHandling = null;
-        HashMap<Integer, HashMap<String, BorrowAsset>> savedDone = null;
+    public static boolean loadBorrowState(HashMap<Integer, HashMap<Integer, BorrowAsset>> waitingMapDirectory, HashMap<Integer, HashMap<Integer, BorrowAsset>> approvedMapDirectory) {
+        boolean ret = false;
+        HashMap<Integer, HashMap<Integer, BorrowAsset>> savedWaitingMapDirectory = null;
+        HashMap<Integer, HashMap<Integer, BorrowAsset>> savedApprovedMapDirectory = null;
         try {
-            savedHandling = (HashMap<Integer, HashMap<String, BorrowAsset>>) FileHandlerManager.getInstance().readBinary(HANDLING_FILE);
-            savedDone = (HashMap<Integer, HashMap<String, BorrowAsset>>) FileHandlerManager.getInstance().readBinary(DONE_FILE);
+            savedWaitingMapDirectory = (HashMap<Integer, HashMap<Integer, BorrowAsset>>) FileHandlerManager.getInstance().readBinary(HANDLING_FILE);
+            savedApprovedMapDirectory = (HashMap<Integer, HashMap<Integer, BorrowAsset>>) FileHandlerManager.getInstance().readBinary(DONE_FILE);
         } catch (Exception ex) {
-            ret = false;
             //Logger.getLogger(AssetDBO.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
-            if (savedDone != null && savedHandling != null) {
-                handling.putAll(savedHandling);
-                done.putAll(savedDone);
+            if (savedWaitingMapDirectory != null && savedApprovedMapDirectory != null) {
+                ret = true;
+                waitingMapDirectory.putAll(savedWaitingMapDirectory);
+                approvedMapDirectory.putAll(savedApprovedMapDirectory);
             }
         }
         return ret;

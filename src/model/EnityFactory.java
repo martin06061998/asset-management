@@ -26,7 +26,7 @@ final public class EnityFactory {
 		if (factory == null) {
 			factory = new EnityFactory();
 			factory.factoryList = new HashMap<>();
-			factory.factoryList.put(Asset.class, new Asset_Factory());
+			factory.factoryList.put(Asset.class, new AssetFactory());
 		}
 		return factory;
 	}
@@ -36,4 +36,7 @@ final public class EnityFactory {
 		return (Asset) factory.factoryList.get(Asset.class).createInstance(item);
 	}
 	
+        public Asset reforgeAsset(JsonNode item)  {
+		return (Asset) factory.factoryList.get(Asset.class).reforge(item);
+	}
 }

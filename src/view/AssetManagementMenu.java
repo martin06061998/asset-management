@@ -73,6 +73,24 @@ public abstract class AssetManagementMenu extends Menu<String> {
         return request;
     }
 
+    protected JsonNode getApprovedRequests() {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode request = mapper.createObjectNode();
+        request.put("key", getKey());
+        int command = RequestHandler.GET_ALL_APPROVED_REQUESTS;
+        request.put("command", command);
+        return sendRequest(request);
+    }
+
+    protected JsonNode getWaitingRequests() {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode request = mapper.createObjectNode();
+        request.put("key", getKey());
+        int command = RequestHandler.GET_ALL_WAITING_REQUESTS;
+        request.put("command", command);
+        return sendRequest(request);
+    }
+
     final protected String getUserID() {
         return key.substring(0, 7);
     }
@@ -105,7 +123,7 @@ public abstract class AssetManagementMenu extends Menu<String> {
                 for (int e : keyMap.values()) {
                     length += e;
                 }
-                String headerLine = StringUtilities.generateRepeatedString("*", length + (keyMap.size() - 1) * 2 + 2);
+                String headerLine = StringUtilities.generateRepeatedString("~", length + (keyMap.size() - 1) * 2 + 2);
                 String line = StringUtilities.generateRepeatedString("-", length + (keyMap.size() - 1) * 2 + 2);
                 System.out.println(headerLine);
                 printHeader(keyMap);
@@ -138,14 +156,16 @@ public abstract class AssetManagementMenu extends Menu<String> {
     }
 
     protected static void printHeader(LinkedHashMap<String, Integer> keyMap) {
-        for (String key : keyMap.keySet()) {
+        keyMap.keySet().stream().map((key) -> {
             int numberOfCharacter = keyMap.get(key);
             int padding = (numberOfCharacter - key.length()) / 2;
             String leftAlign = StringUtilities.generateRepeatedString(" ", padding);
             String rightAlign = StringUtilities.generateRepeatedString(" ", numberOfCharacter - padding - key.length());
             String outputString = "|" + leftAlign + key.toUpperCase() + rightAlign + "|";
+            return outputString;
+        }).forEachOrdered((outputString) -> {
             System.out.print(outputString);
-        }
+        });
         System.out.println();
     }
 

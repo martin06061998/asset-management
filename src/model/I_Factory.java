@@ -12,39 +12,46 @@ import java.util.Iterator;
 /**
  *
  * @author marti
-	 */
+ */
 abstract class I_Factory<T> {
 
-	HashMap<String, String> regexMap;
+    HashMap<String, String> regexMap;
 
-	I_Factory() {
-		regexMap = new HashMap<>();
-	}
+    I_Factory() {
+        regexMap = new HashMap<>();
+    }
 
-	abstract T createInstance(JsonNode target);
-	
-	final boolean checkPattern(JsonNode data,boolean checkNumberOfKeys) {
-		boolean isValidFormat = true;
-		int numberOfKeys = 0;
-		String regex, value, key;
-		Iterator<String> keys = data.fieldNames();
-		while (keys.hasNext()) {
-			key = keys.next();
-			if (!regexMap.containsKey(key)) {
-				isValidFormat = false;
-				break;
-			}
-			regex = regexMap.get(key);
-			value = data.get(key).asText();
-			if (!value.matches(regex)) {
-				isValidFormat = false;
-				break;
-			}
-			numberOfKeys++;
-		}
-		if (checkNumberOfKeys && (numberOfKeys < regexMap.size())) {
-			isValidFormat = false;
-		}
-		return isValidFormat;
-	}
+    abstract T createInstance(JsonNode target);
+
+    abstract T reforge(JsonNode target);
+
+    final boolean checkPattern(JsonNode data, boolean equalNumOfKeys) {
+        boolean isValid = data.has("id");
+        if (!isValid) {
+            return false;
+        }
+        int numberOfKeys = 0;
+        String regex, value, key;
+        Iterator<String> keys = data.fieldNames();
+        while (keys.hasNext()) {
+            key = keys.next();
+            if (!regexMap.containsKey(key)) {
+                isValid = false;
+                break;
+            }
+            regex = regexMap.get(key);
+            value = data.get(key).asText();
+            if (!value.matches(regex)) {
+                isValid = false;
+                break;
+            }
+            numberOfKeys++;
+        }
+        if (isValid && equalNumOfKeys) {
+            isValid = numberOfKeys == regexMap.size();
+        } else if (isValid && !equalNumOfKeys) {
+            isValid = numberOfKeys >= regexMap.size();
+        }
+        return isValid;
+    }
 }

@@ -29,7 +29,10 @@ public class StringUtilities {
 		target = target.toLowerCase();
 		String[] split = target.split("\\s");
 		for (String e : split) {
-			response += e.substring(0, 1).toUpperCase() + e.substring(1) + " ";
+                        if(e.length() > 1)
+                            response += e.substring(0, 1).toUpperCase() + e.substring(1) + " ";
+                        else
+                            response += e;
 		}
 		return response.trim();
 	}

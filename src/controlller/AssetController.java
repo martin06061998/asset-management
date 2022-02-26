@@ -12,11 +12,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import dbo.AssetDBO;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import model.Asset;
 import model.BorrowAsset;
 import model.EnityFactory;
@@ -40,34 +41,61 @@ class AssetController implements I_AssetController, Serializable {
             controller = new AssetController();
             controller.borrowMng = controller.new BorrowManager();
             controller.assetMap = new HashMap<>();
-            controller.assetMap.putAll(seedData());
+            //controller.assetMap.putAll(seedData());
+            //controller.save();
             controller.load();
         }
         return controller;
     }
 
-    private static HashMap<String, Asset> seedData() {
+    /*private static HashMap<String, Asset> seedData() {
         HashMap<String, Asset> ret = new HashMap<>();
-        Asset newAsset = new Asset("A001", "Samsung projector", "White", 500l, 3.2, 10);
-        Asset newAsset2 = new Asset("A002", "Macbook Pro 2016", "White", 500l, 3.2, 30);
+        Asset newAsset = new Asset("A001", "Samsung projector", "White", 500, 3.2, 10, 5);
+        Asset newAsset2 = new Asset("A002", "Macbook Pro 2016", "Sliver", 1000, 2.2, 5, 2);
         ret.put(newAsset.getAssetID(), newAsset);
         ret.put(newAsset2.getAssetID(), newAsset2);
         return ret;
-    }
+    }*/
 
-    JsonNode borrowAsset(JsonNode dataElement) {
+    JsonNode borrowAsset(String empID, JsonNode dataElement) {
         ObjectNode reply = initializeJsonObj();
         int counter = 0;
         for (JsonNode element : dataElement) {
-            boolean success = borrowMng.createBorrowRequest(element);
-            if (success) {
-                counter++;
+            try {
+                boolean success = borrowMng.createBorrowRequest(empID, element);
+                if (success) {
+                    counter++;
+                }
+            } catch (Exception ex) {
+                Logger.getLogger(AssetController.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         reply.put("status", "accepted");
         reply.put("message", "successfuly add " + counter + " requests");
         if (counter > 0) {
-            save();
+            borrowMng.save();
+        }
+        return reply;
+    }
+
+    JsonNode cancelRequest(String empID, JsonNode dataElement) {
+        ObjectNode reply = initializeJsonObj();
+        int counter = 0;
+        for (JsonNode element : dataElement) {
+            try {
+                final int bID = borrowMng.Map_BIDStr_To_Number(element.get("id").asText());
+                boolean success = borrowMng.cancelRequest(empID, bID);
+                if (success) {
+                    counter++;
+                }
+            } catch (Exception ex) {
+                Logger.getLogger(AssetController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        reply.put("status", "accepted");
+        reply.put("message", "successfuly cancel " + counter + " requests");
+        if (counter > 0) {
+            borrowMng.save();
         }
         return reply;
     }
@@ -75,46 +103,82 @@ class AssetController implements I_AssetController, Serializable {
     @Override
     public JsonNode add(JsonNode dataElement) {
         ObjectNode reply = initializeJsonObj();
-        int counter = 0;
+        ArrayNode data = this.initializeJsonArray();
+        int count = 0;
+        int success = 0;
         for (JsonNode element : dataElement) {
+            ObjectNode entry = (ObjectNode) element;
+            ObjectNode report = initializeJsonObj();
+            String status;
+            String id = allocateAssetID();
+            entry.put("id", id);
             try {
-                String id = element.get("id").asText();
-                if (!containsAsset(id)) {
-                    Asset newAsset = EnityFactory.getInstane().createAsset(element);
-                    assetMap.put(newAsset.getAssetID(), newAsset);
-                    counter++;
-                }
-            } catch (Exception ex) {
-
+                Asset newAsset = EnityFactory.getInstane().createAsset(entry);
+                assetMap.put(newAsset.getAssetID(), newAsset);
+                success++;
+                status = "success";
+            } catch (IllegalArgumentException ex) {
+                status = "fail due to " + ex.getMessage();
             }
+
+            count++;
+            report.put("Number", count);
+            report.put("status", status);
+            data.add(report);
         }
         reply.put("status", "accepted");
-        reply.put("message", "successfuly add " + counter + " assets");
-        if (counter > 0) {
+        reply.set("data", data);
+        reply.put("message", "successfuly add " + success + " assets");
+        if (success > 0) {
             save();
         }
         return reply;
+    }
+
+    String allocateAssetID() {
+        int size = assetMap.size();
+        String newID = generateAssetIDStr(size);
+        while (containsAsset(newID)) {
+            newID = generateAssetIDStr(++size);
+        }
+        return newID;
+    }
+
+    String generateAssetIDStr(int number) {
+        String newBID = "a" + String.valueOf(number);
+        while (newBID.length() < 4) {
+            newBID = "a0" + newBID.substring(1);
+        }
+        return newBID;
     }
 
     JsonNode edit(JsonNode dataElement) {
         ObjectNode reply = initializeJsonObj();
         ArrayNode data = this.initializeJsonArray();
         int count = 0;
+        int success = 0;
         for (JsonNode element : dataElement) {
+            ObjectNode report = initializeJsonObj();
+            String status;
             String id = element.get("id").asText();
             if (containsAsset(id)) {
                 try {
-                    Asset reforgedAsset = EnityFactory.getInstane().createAsset(element);
-                    assetMap.put(reforgedAsset.getAssetID(), reforgedAsset);
-                    data.add(reforgedAsset.toJsonNode());
-                    count++;
-                } catch (Exception ex) {
-
+                    Asset remakeAsset = EnityFactory.getInstane().reforgeAsset(element);
+                    assetMap.put(remakeAsset.getAssetID(), remakeAsset);
+                    success++;
+                    status = "success";
+                } catch (IllegalArgumentException ex) {
+                    status = "fail due to " + ex.getMessage();
                 }
+            } else {
+                status = "fail due to not exist id";
             }
-
+            count++;
+            report.put("Number", count);
+            report.put("status", status);
+            data.add(report);
         }
-        if (count > 0) {
+        if (success > 0) {
             save();
         }
         reply.put("status", "accepted");
@@ -128,7 +192,7 @@ class AssetController implements I_AssetController, Serializable {
         ArrayNode data = this.initializeJsonArray();
         int count = 0;
         for (JsonNode element : dataElement) {
-            String bID = BorrowAsset.Map_rID_toBID(element.asText());
+            int bID = borrowMng.Map_BIDStr_To_Number(element.asText());
             boolean isApprovable = borrowMng.isApprovable(bID);
             if (isApprovable) {
                 borrowMng.accept(bID);
@@ -136,15 +200,19 @@ class AssetController implements I_AssetController, Serializable {
                 count++;
             }
         }
+        if (count > 0) {
+            borrowMng.save();
+            save();
+        }
         reply.put("status", "accepted");
         reply.put("message", "successfully approve " + count + " requests");
         reply.set("total entries", data);
         return reply;
     }
 
-    JsonNode getAllApprovedRequests() {
+    JsonNode getAllApprovedRequests(int privilege, String empID) {
         ObjectNode reply = initializeJsonObj();
-        ArrayNode data = borrowMng.encapsulateAllApprovedRequests();
+        ArrayNode data = borrowMng.encapsulateAllApprovedRequests(privilege, empID);
         reply.put("status", "accepted");
         reply.set("data", data);
         reply.put("size", data.size());
@@ -152,9 +220,9 @@ class AssetController implements I_AssetController, Serializable {
         return reply;
     }
 
-    JsonNode getAllWaitingRequests() {
+    JsonNode getAllWaitingRequests(int privilege, String empID) {
         ObjectNode reply = initializeJsonObj();
-        ArrayNode data = borrowMng.encapsulateAllWaitingRequests();
+        ArrayNode data = borrowMng.encapsulateAllWaitingRequests(privilege, empID);
         reply.put("status", "accepted");
         reply.set("data", data);
         reply.put("size", data.size());
@@ -167,9 +235,9 @@ class AssetController implements I_AssetController, Serializable {
     }
 
     void load() {
-        Serializable data = AssetDBO.loadAssets();
+        HashMap<String, Asset> data = AssetDBO.loadAssets();
         if (data != null) {
-            assetMap = (HashMap<String, Asset>) data;
+            assetMap = data;
         }
     }
 
@@ -180,7 +248,7 @@ class AssetController implements I_AssetController, Serializable {
 
     @Override
     public boolean isAcceptable(String key, int command) {
-        if (command < 2 || command > 3000 || key == null || key.length() < 15) {
+        if (command < 0 || command > 3000 || key == null || key.length() < 15) {
             return false;
         }
         String standardKey = key.substring(0, 8).toLowerCase() + key.substring(8, key.length());
@@ -226,6 +294,7 @@ class AssetController implements I_AssetController, Serializable {
         ObjectNode reply = initializeJsonObj();
         ArrayNode data;
         List<Asset> list = findAll((n) -> n.getName().contains(name));
+        list.sort((a1, a2) -> a2.getName().compareTo(a1.getName()));
         data = encapsulate(list);
         reply.put("status", "accepted");
         reply.put("message", "successfully");
@@ -235,11 +304,9 @@ class AssetController implements I_AssetController, Serializable {
 
     private List<Asset> findAll(Predicate<Asset> predicate) {
         List<Asset> ret = new ArrayList<>();
-        for (Asset item : assetMap.values()) {
-            if (predicate.test(item)) {
-                ret.add(item);
-            }
-        }
+        assetMap.values().stream().filter((item) -> (predicate.test(item))).forEachOrdered((item) -> {
+            ret.add(item);
+        });
         return ret;
     }
 
@@ -274,131 +341,293 @@ class AssetController implements I_AssetController, Serializable {
         return ret;
     }
 
-    public class BorrowManager implements Serializable {
+    private class BorrowManager implements Serializable {
 
         private static final long serialVersionUID = 1215393158348534567L;
         private HashMap<String, int[]> masterDirectory;
-        private HashMap<Integer, HashMap<String, BorrowAsset>> waitingMapDirectory;
-        private HashMap<Integer, HashMap<String, BorrowAsset>> approvedMapDirectory;
-        private Integer[] BIDAllocationMap;
-        private int allocationMapCapacity;
-        private int numberOfBID;
-        private static transient final int MIN_ALLOCATION_MAP_CAPACITY = 16;
-        private static transient final int MAX_ALLOCATION_MAP_CAPACITY = Integer.MAX_VALUE;
+        private transient HashMap<Integer, HashMap<Integer, BorrowAsset>> waitingMapDirectory;
+        private transient HashMap<Integer, HashMap<Integer, BorrowAsset>> approvedMapDirectory;
+        private HashMap<Integer, String> BIDAllocationMap;
+        private int numOfRequest; // number of waiting request
+        private final static int MAX_NUMBER_OF_REQUESTS = 1000;
 
         private BorrowManager() {
             masterDirectory = new HashMap<>();
             waitingMapDirectory = new HashMap<>();
             approvedMapDirectory = new HashMap<>();
-            BIDAllocationMap = new Integer[MIN_ALLOCATION_MAP_CAPACITY];
-            seedData();
-            loadSystemFile();
-
+            BIDAllocationMap = new HashMap<>();
+            //seedData();
+            //save();
+            load();
         }
 
-        private boolean createBorrowRequest(JsonNode element) {
+        private void save() {
+            AssetDBO.saveBorrowState(waitingMapDirectory, approvedMapDirectory);
+            AssetDBO.saveSystemFile(this);
+        }
+
+        private void load() {
+            Serializable data = AssetDBO.loadSystemFile();
+            if (data != null && data.getClass() == BorrowManager.class) {
+                BorrowManager savedBrrManager = (BorrowManager) data;
+                if (savedBrrManager.BIDAllocationMap != null && savedBrrManager.masterDirectory != null) {
+                    if (AssetDBO.loadBorrowState(waitingMapDirectory, approvedMapDirectory)) {
+                        this.masterDirectory = savedBrrManager.masterDirectory;
+                        this.BIDAllocationMap = savedBrrManager.BIDAllocationMap;
+                        this.numOfRequest = savedBrrManager.numOfRequest;
+                    }
+                }
+            }
+        }
+
+        public int Map_BIDStr_To_Number(String bID) {
+            final String regex = "[rb]\\d{3}";
+            if (bID == null || !bID.matches(regex)) {
+                return -1;
+            }
+            int ret = Integer.parseInt(bID.substring(1));
+            if (bID.charAt(0) == 'b') {
+                ret += 1000;
+            }
+            return ret;
+        }
+
+        public String getBIDStr(int bID) {
+            String ret;
+            String prefix;
+            int num = bID;
+            if (num >= 1000) {
+                num -= 1000;
+                prefix = "b";
+            } else {
+                prefix = "r";
+            }
+            ret = prefix + String.valueOf(num);
+            while (ret.length() < 4) {
+                ret = prefix + "0" + ret.substring(1);
+            }
+            return ret;
+        }
+
+        private boolean createBorrowRequest(String empID, JsonNode element) throws Exception {
             boolean ret = true;
             try {
-                String empID = element.get("empid").asText();
+                if (numOfRequest == MAX_NUMBER_OF_REQUESTS) {
+                    return false;
+                }
                 String assetID = element.get("assetid").asText();
                 int quantity = Integer.parseInt(element.get("quantity").asText());
-                if(!containsAsset(assetID))
+                if (!containsAsset(assetID)) {
                     return false;
+                }
                 if (!EmpController.getInstance().isEmployeeExist(empID)) {
                     return false;
                 }
-                if (!this.isEmpInfoExist(empID)) {
-                    initializeEmpInfo(empID);
-                }
-                int newBID = allocateBID(empID);
-                BorrowAsset newBrr = BorrowAsset.createNewRequest(generateBIDStr(newBID), assetID, empID, quantity);
-                HashMap<String, BorrowAsset> waitingdMap = this.getWaitingMap(empID);
+                ensureSystemStructure(empID, true, false);
+                int newBID = allocateBID();
+                BorrowAsset newBrr = BorrowAsset.createNewRequest(newBID, assetID, empID, quantity);
+                HashMap<Integer, BorrowAsset> waitingdMap = this.getWaitingMap(empID);
                 waitingdMap.put(newBrr.bID(), newBrr);
-                updateBIDAllocateMap(newBID, empID);
-                saveSystemFile();
-            } catch (NumberFormatException e) {
-                System.out.println(e.getMessage());
+                BIDAllocationMap.put(newBID, empID);
+                numOfRequest++;
+            } catch (NumberFormatException | IllegalStateException e) {
+                //System.out.println(e.getMessage());
                 ret = false;
             }
 
             return ret;
         }
 
-        public void initializeEmpInfo(String empID) {
-            int[] empTable = new int[2];
-            int waitingTableKey = Allocate_Waiting_Borrow_Table_Key();
-            int approvedTableKey = Allocate_Approved_Borrow_Table_Key();
-            empTable[0] = waitingTableKey;
-            empTable[1] = approvedTableKey;
-            masterDirectory.put(empID, empTable);
-            HashMap<String, BorrowAsset> waitingMap = new HashMap<>();
-            HashMap<String, BorrowAsset> approvedMap = new HashMap<>();
-            waitingMapDirectory.put(waitingTableKey, waitingMap);
-            approvedMapDirectory.put(approvedTableKey, approvedMap);
-        }
-
-        private void saveSystemFile() {
-            AssetDBO.saveSystemFile(this);
-            AssetDBO.backupBorrowState(waitingMapDirectory, approvedMapDirectory);
-
-        }
-
-        private void loadSystemFile() {
-            Object data = AssetDBO.loadSystemFile();
-            if (data != null && data.getClass() == BorrowManager.class) {
-                BorrowManager saveBorrowMng = (BorrowManager) data;
-                this.masterDirectory = saveBorrowMng.masterDirectory;
-                this.BIDAllocationMap = saveBorrowMng.BIDAllocationMap;
-                this.allocationMapCapacity = saveBorrowMng.allocationMapCapacity;
-                this.waitingMapDirectory = saveBorrowMng.waitingMapDirectory;
-                this.approvedMapDirectory = saveBorrowMng.approvedMapDirectory;
-                this.numberOfBID = saveBorrowMng.numberOfBID;
+        private boolean cancelRequest(String empID, int bID) {
+            if (!empHasBID(empID, bID, true, false)) {
+                return false;
             }
+            HashMap<Integer,BorrowAsset> waitingMap = getWaitingMap(empID);
+            waitingMap.remove(bID);
+            BIDAllocationMap.remove(bID);
+            numOfRequest--;
+            clearEmpInfo(empID, true, true);
+            return true;
         }
 
-        private ArrayNode encapsulateAllApprovedRequests() {
+        private boolean empHasBID(String empID, int bID, boolean checkWaitingMap, boolean checkApprovedMap) {
+            boolean exist = true;
+            if (!isBIDExist(bID)) {
+                return false;
+            }
+            if (!isEmpInfoExist(empID)) {
+                return false;
+            }
+
+            if (checkWaitingMap) {
+                HashMap<Integer, BorrowAsset> waitingMap = getWaitingMap(empID);
+                if (waitingMap == null) {
+                    exist = false;
+                } else {
+                    exist = waitingMap.containsKey(bID);
+                }
+            }
+            if (checkApprovedMap && exist) {
+                HashMap<Integer, BorrowAsset> approvedMap = getApprovedMap(empID);
+                if (approvedMap == null) {
+                    exist = false;
+                } else {
+                    exist = approvedMap.containsKey(bID);
+                }
+            }
+            return exist;
+        }
+
+        private void ensureSystemStructure(String empID, boolean createWaitingMap, boolean createApprovedMap) {
+            if (!isEmpInfoExist(empID)) {
+                masterDirectory.put(empID, new int[]{-1, -1});
+            }
+            final int[] empTable = masterDirectory.get(empID);
+            if (createWaitingMap && empTable[0] == -1) {
+                final int waitingTableKey = Allocate_Waiting_Borrow_Table_Key();
+                empTable[0] = waitingTableKey;
+                HashMap<Integer, BorrowAsset> waitingMap = new HashMap<>();
+                waitingMapDirectory.put(waitingTableKey, waitingMap);
+
+            }
+            if (createApprovedMap && empTable[1] == -1) {
+                final int approvedTableKey = Allocate_Approved_Borrow_Table_Key();
+                empTable[1] = approvedTableKey;
+                HashMap<Integer, BorrowAsset> approvedMap = new HashMap<>();
+                approvedMapDirectory.put(approvedTableKey, approvedMap);
+            }
+
+        }
+
+        private ArrayNode encapsulateAllApprovedRequests(int privilege, String empID) {
             ArrayNode pack = initializeJsonArray();
-            approvedMapDirectory.values().forEach((approvedMap) -> {
-                approvedMap.values().forEach((request) -> {
-                    pack.add(encapsulateApprovedRequest(request));
+            if (privilege == 3000) {
+                approvedMapDirectory.values().forEach((approvedMap) -> {
+                    approvedMap.values().forEach((request) -> {
+                        pack.add(encapsulateApprovedRequest(request));
+                    });
                 });
-            });
+            }
+            else{
+                HashMap<Integer, BorrowAsset> approvedMap = this.getApprovedMap(empID);
+                approvedMap.values().forEach((request) -> {
+                    pack.add(this.encapsulateApprovedRequest(request));
+                });
+            }
             return pack;
         }
 
-        private ArrayNode encapsulateAllWaitingRequests() {
+        private ArrayNode encapsulateAllWaitingRequests(int privilege, String empID) {
             ArrayNode pack = initializeJsonArray();
-            waitingMapDirectory.values().forEach((waitingMap) -> {
+            ensureSystemStructure(empID, true, false);
+            if (privilege == 3000) {
+                waitingMapDirectory.values().forEach((waitingMap) -> {
+                    waitingMap.values().forEach((request) -> {
+                        pack.add(encapsulateWaitingRequest(request));
+                    });
+                });
+            } else {
+                HashMap<Integer, BorrowAsset> waitingMap = this.getWaitingMap(empID);
                 waitingMap.values().forEach((request) -> {
                     pack.add(encapsulateWaitingRequest(request));
                 });
-            });
+            }
             return pack;
         }
 
-        private void updateBIDAllocateMap(int bid, String empID) {
-            BIDAllocationMap[bid] = Integer.parseInt(empID.substring(1));
-            numberOfBID++;
-        }
+        /*private void seedData() {
+            int newBID = 0;
+            String assetID;
+            Date requestTime;
+            String empID;
+            int qty = 1;
+            //Request
+            newBID = 1;
+            assetID = "a001";
+            requestTime = new GregorianCalendar(2021, GregorianCalendar.DECEMBER, 23, 13, 17, 56).getTime();
+            empID = "e140449";
+            ensureSystemStructure(empID, true, false);
+            BorrowAsset newBrr = BorrowAsset.createNewRequest(newBID, assetID, empID, qty, requestTime);
+            HashMap<Integer, BorrowAsset> waitingdMap = this.getWaitingMap(empID);
+            waitingdMap.put(newBrr.bID(), newBrr);
+            BIDAllocationMap.put(newBID, empID);
 
-        private void seedData() {
-            String empID = "e160001";
-            String assetID = "a001";
-            int[] empTable = new int[2];
-            int waitingTableKey = Allocate_Waiting_Borrow_Table_Key();
-            int approvedTableKey = Allocate_Approved_Borrow_Table_Key();
-            empTable[0] = waitingTableKey;
-            empTable[1] = approvedTableKey;
-            masterDirectory.put(empID, empTable);
-            HashMap<String, BorrowAsset> waitingMap = new HashMap<>();
-            HashMap<String, BorrowAsset> approvedMap = new HashMap<>();
-            waitingMapDirectory.put(waitingTableKey, waitingMap);
-            approvedMapDirectory.put(approvedTableKey, approvedMap);
-            int newBID = allocateBID(empID);
-            BorrowAsset newBrr = BorrowAsset.createNewRequest(generateBIDStr(newBID), assetID, empID, 5);
-            waitingMapDirectory.get(waitingTableKey).put(newBrr.bID(), newBrr);
-            updateBIDAllocateMap(newBID, empID);
-        }
+            newBID = 2;
+            assetID = "a002";
+            requestTime = new GregorianCalendar(2021, GregorianCalendar.DECEMBER, 24, 12, 18, 56).getTime();
+            empID = "e160001";
+            ensureSystemStructure(empID, true, false);
+            newBrr = BorrowAsset.createNewRequest(newBID, assetID, empID, qty, requestTime);
+            waitingdMap = this.getWaitingMap(empID);
+            waitingdMap.put(newBrr.bID(), newBrr);
+            BIDAllocationMap.put(newBID, empID);
+
+            newBID = 3;
+            assetID = "a001";
+            requestTime = new GregorianCalendar(2021, GregorianCalendar.DECEMBER, 23, 11, 19, 56).getTime();
+            empID = "e160798";
+            ensureSystemStructure(empID, true, false);
+            newBrr = BorrowAsset.createNewRequest(newBID, assetID, empID, qty, requestTime);
+            waitingdMap = this.getWaitingMap(empID);
+            waitingdMap.put(newBrr.bID(), newBrr);
+            BIDAllocationMap.put(newBID, empID);
+
+            newBID = 7;
+            assetID = "a002";
+            requestTime = new GregorianCalendar(2021, GregorianCalendar.DECEMBER, 24, 10, 10, 56).getTime();
+            empID = "e160240";
+            ensureSystemStructure(empID, true, false);
+            newBrr = BorrowAsset.createNewRequest(newBID, assetID, empID, qty, requestTime);
+            waitingdMap = this.getWaitingMap(empID);
+            waitingdMap.put(newBrr.bID(), newBrr);
+            BIDAllocationMap.put(newBID, empID);
+            numOfRequest = 4;
+
+            //Borrow
+            newBID = 1001;
+            assetID = "a001";
+            Date borrowTime = new GregorianCalendar(2021, GregorianCalendar.DECEMBER, 23, 15, 13, 46).getTime();
+            empID = "e160001";
+            ensureSystemStructure(empID, false, true);
+            newBrr = BorrowAsset.createApprovedRequest(newBID, assetID, empID, qty, borrowTime);
+            HashMap<Integer, BorrowAsset> approvedMap = this.getApprovedMap(empID);
+            approvedMap.put(newBrr.bID(), newBrr);
+            BIDAllocationMap.put(newBID, empID);
+
+            newBID = 1002;
+            assetID = "a001";
+            qty = 2;
+            borrowTime = new GregorianCalendar(2021, GregorianCalendar.DECEMBER, 25, 16, 14, 56).getTime();
+            empID = "e160001";
+            ensureSystemStructure(empID, false, true);
+            newBrr = BorrowAsset.createApprovedRequest(newBID, assetID, empID, qty, borrowTime);
+            approvedMap = this.getApprovedMap(empID);
+            approvedMap.put(newBrr.bID(), newBrr);
+            BIDAllocationMap.put(newBID, empID);
+
+            newBID = 1003;
+            assetID = "a002";
+            qty = 3;
+            borrowTime = new GregorianCalendar(2021, GregorianCalendar.DECEMBER, 15, 17, 15, 52).getTime();
+            empID = "e160798";
+            ensureSystemStructure(empID, false, true);
+            newBrr = BorrowAsset.createApprovedRequest(newBID, assetID, empID, qty, borrowTime);
+            approvedMap = this.getApprovedMap(empID);
+            approvedMap.put(newBrr.bID(), newBrr);
+            BIDAllocationMap.put(newBID, empID);
+
+            newBID = 1007;
+            assetID = "a001";
+            qty = 2;
+            borrowTime = new GregorianCalendar(2021, GregorianCalendar.DECEMBER, 26, 12, 16, 53).getTime();
+            empID = "e160240";
+            ensureSystemStructure(empID, false, true);
+            newBrr = BorrowAsset.createApprovedRequest(newBID, assetID, empID, qty, borrowTime);
+            approvedMap = this.getApprovedMap(empID);
+            approvedMap.put(newBrr.bID(), newBrr);
+            BIDAllocationMap.put(newBID, empID);
+
+        }*/
 
         private int Allocate_Waiting_Borrow_Table_Key() {
             int pos = waitingMapDirectory.size();
@@ -416,49 +645,29 @@ class AssetController implements I_AssetController, Serializable {
             return pos;
         }
 
-        private int allocateBID(String empID) {
-            ensureCapacity(numberOfBID + 1);
-            int bid = numberOfBID;
+        private int allocateBID() {
+            int bid = numOfRequest;
+            if (numOfRequest == MAX_NUMBER_OF_REQUESTS) {
+                throw new IllegalStateException("Reach maximum of request");
+            }
             while (isBIDExist(bid)) {
-                bid = (bid + 1) % allocationMapCapacity;
+                bid = (bid + 1) % MAX_NUMBER_OF_REQUESTS;
             }
             return bid;
         }
 
-        private void ensureCapacity(int minCapacity) {
-            if (minCapacity > allocationMapCapacity) {
-                grow(minCapacity);
-            }
-        }
-
-        private void grow(int minCapacity) {
-            final int minExpand = MIN_ALLOCATION_MAP_CAPACITY;
-            final int doubledOldCapacity = allocationMapCapacity << 1;
-            if (doubledOldCapacity < 0) {
-                hugeMap(minCapacity);
-            } else {
-                final int newCapacity = (doubledOldCapacity > minExpand) ? doubledOldCapacity : minExpand;
-                BIDAllocationMap = Arrays.copyOf(BIDAllocationMap, newCapacity);
-                allocationMapCapacity = newCapacity;
-            }
-        }
-
-        private void hugeMap(int minCapacity) {
-            if (minCapacity < 0) {
-                throw new OutOfMemoryError();
-            }
-            BIDAllocationMap = Arrays.copyOf(BIDAllocationMap, MAX_ALLOCATION_MAP_CAPACITY);
-            allocationMapCapacity = Integer.MAX_VALUE;
-        }
-
         private boolean isBIDExist(int bID) {
-            if (bID >= allocationMapCapacity || bID < 0) {
+            if (bID < 0 || bID > 1999) {
                 return false;
             }
-            return BIDAllocationMap[bID] != null;
+            return BIDAllocationMap.containsKey(bID);
         }
 
-        private boolean isApprovable(String bID) {
+        private boolean isApprovable(int bID) {
+            final int numOfApproved = BIDAllocationMap.size() - numOfRequest;
+            if (numOfApproved == MAX_NUMBER_OF_REQUESTS) {
+                return false;
+            }
             if (!isBIDExistInBorrowMap(bID, true, false)) {
                 return false;
             }
@@ -470,10 +679,11 @@ class AssetController implements I_AssetController, Serializable {
             return offeredQty <= currentQty;
         }
 
-        private void accept(String bID) {
-            String empID = Map_BID_To_EmpID(convertBID(bID));
-            final HashMap<String, BorrowAsset> waitingMap = this.getWaitingMap(empID);
-            final HashMap<String, BorrowAsset> approvedMap = this.getApprovedMap(empID);
+        private void accept(int bID) {
+            String empID = Map_BID_To_EmpID(bID);
+            ensureSystemStructure(empID, true, true);
+            final HashMap<Integer, BorrowAsset> waitingMap = this.getWaitingMap(empID);
+            final HashMap<Integer, BorrowAsset> approvedMap = this.getApprovedMap(empID);
             final BorrowAsset brr = getWaitingRequest(bID);
             final int offeredQty = brr.offeredQty();
             final Asset asset = getAsset(bID);
@@ -482,75 +692,109 @@ class AssetController implements I_AssetController, Serializable {
             asset.setCurQty(newCurrentQty);
             brr.setBorrowDateTime(new Date());
             brr.setApprovedQty(offeredQty);
-            approvedMap.put(bID, brr);
+            final int numOfApproved = BIDAllocationMap.size() - numOfRequest;
+            int newBID = numOfApproved + MAX_NUMBER_OF_REQUESTS;
+            while (BIDAllocationMap.containsKey(newBID)) {
+                newBID = (newBID + 1) % MAX_NUMBER_OF_REQUESTS + MAX_NUMBER_OF_REQUESTS;
+            }
+            brr.setBID(newBID);
+            approvedMap.put(newBID, brr);
             waitingMap.remove(bID);
-            saveSystemFile();
-            AssetController.this.save();
+            BIDAllocationMap.remove(bID);
+            BIDAllocationMap.put(newBID, empID);
+            numOfRequest--;
+            clearEmpInfo(empID, true, false);
         }
 
-        private Asset getAsset(String bID) {
+        private void clearEmpInfo(String empID, boolean checkWaitingDirectory, boolean checkApprovedDirectory) {
+            final int[] empTable = masterDirectory.get(empID);
+            if (checkWaitingDirectory && empTable[0] != -1) {
+                final int size = this.getWaitingMap(empID).size();
+                if (size == 0) {
+                    this.waitingMapDirectory.remove(empTable[0]);
+                    empTable[0] = -1;
+                }
+            }
+            if (checkApprovedDirectory && empTable[1] != -1) {
+                final int size = this.getApprovedMap(empID).size();
+                if (size == 0) {
+                    this.approvedMapDirectory.remove(empTable[1]);
+                    empTable[1] = -1;
+                }
+            }
+            if (empTable[0] == -1 && empTable[1] == -1) {
+                masterDirectory.remove(empID);
+            }
+        }
+
+        private Asset getAsset(int bID) {
             final BorrowAsset brr = getWaitingRequest(bID);
             final String assetID = brr.assetID();
             return getAssetByID(assetID);
         }
 
         private String Map_BID_To_EmpID(int bID) {
-            return "e" + BIDAllocationMap[bID];
+            return BIDAllocationMap.get(bID);
         }
 
-        private BorrowAsset getApprovedRequest(String bID) {
+        private BorrowAsset getApprovedRequest(int bID) {
             BorrowAsset ret = null;
             if (isBIDExistInBorrowMap(bID, false, true)) {
-                String empID = Map_BID_To_EmpID(convertBID(bID));
-                HashMap<String, BorrowAsset> approvedMap = getApprovedMap(empID);
+                String empID = Map_BID_To_EmpID(bID);
+                HashMap<Integer, BorrowAsset> approvedMap = getApprovedMap(empID);
                 ret = approvedMap.get(bID);
             }
             return ret;
         }
 
-        private BorrowAsset getWaitingRequest(String bID) {
-            BorrowAsset ret = null;
-            if (isBIDExistInBorrowMap(bID, true, false)) {
-                String empID = Map_BID_To_EmpID(convertBID(bID));
-                HashMap<String, BorrowAsset> waitingMap = getWaitingMap(empID);
-                ret = waitingMap.get(bID);
-            }
+        private BorrowAsset getWaitingRequest(int bID) {
+            BorrowAsset ret;
+            String empID = Map_BID_To_EmpID(bID);
+            HashMap<Integer, BorrowAsset> waitingMap = getWaitingMap(empID);
+            ret = waitingMap.get(bID);
             return ret;
         }
 
-        private HashMap<String, BorrowAsset> getApprovedMap(String empID) {
+        private HashMap<Integer, BorrowAsset> getApprovedMap(String empID) {
             final int[] empTable = masterDirectory.get(empID);
             final int pos = empTable[1];
             return approvedMapDirectory.get(pos);
         }
 
-        private HashMap<String, BorrowAsset> getWaitingMap(String empID) {
+        private HashMap<Integer, BorrowAsset> getWaitingMap(String empID) {
             final int[] empTable = masterDirectory.get(empID);
             final int pos = empTable[0];
             return waitingMapDirectory.get(pos);
         }
 
-        private boolean isBIDExistInBorrowMap(String bID, boolean checkInWaiting, boolean checkInApproved) {
-            final String regex = "b\\d{3}";
+        private boolean isBIDExistInBorrowMap(int bID, boolean checkInWaiting, boolean checkInApproved) {
             boolean exist = true;
-            if (bID == null || !bID.matches(regex)) {
+            if (!isBIDExist(bID)) {
                 return false;
             }
-            if (!isBIDExist(convertBID(bID))) {
-                return false;
-            }
-            String empID = Map_BID_To_EmpID(convertBID(bID));
+
+            String empID = Map_BID_To_EmpID(bID);
             if (!isEmpInfoExist(empID)) {
                 return false;
             }
 
             if (checkInWaiting) {
-                HashMap<String, BorrowAsset> waiting = getWaitingMap(empID);
-                exist = waiting.containsKey(bID);
+                HashMap<Integer, BorrowAsset> waiting = getWaitingMap(empID);
+                if (waiting == null) {
+                    exist = false;
+                } else {
+                    exist = waiting.containsKey(bID);
+                }
+
             }
             if (checkInApproved && exist) {
-                HashMap<String, BorrowAsset> approved = getApprovedMap(empID);
-                exist = approved.containsKey(bID);
+                HashMap<Integer, BorrowAsset> approved = getApprovedMap(empID);
+                if (approved == null) {
+                    exist = false;
+                } else {
+                    exist = approved.containsKey(bID);
+                }
+
             }
             return exist;
         }
@@ -564,36 +808,25 @@ class AssetController implements I_AssetController, Serializable {
 
         private JsonNode encapsulateWaitingRequest(BorrowAsset item) {
             ObjectNode pack = initializeJsonObj();
-            pack.put("RID", item.rID());
+            Asset asset = getAsset(item.bID());
+            pack.put("RID", getBIDStr(item.bID()));
             pack.put("Asset ID", item.assetID());
             pack.put("Employee ID", item.employeeID());
-            pack.put("Offered Quantity", item.offeredQty());
+            pack.put("Offered Qty", item.offeredQty());
+            pack.put("Current Qty", asset.getCurQty());
             pack.put("Request Time", String.valueOf(item.requestDateTIme()));
             return pack;
         }
 
         private JsonNode encapsulateApprovedRequest(BorrowAsset item) {
             ObjectNode pack = initializeJsonObj();
-            pack.put("BID", item.bID());
+            pack.put("BID", getBIDStr(item.bID()));
             pack.put("Asset ID", item.assetID());
             pack.put("Employee ID", item.employeeID());
-            pack.put("Offered Quantity", item.offeredQty());
-            pack.put("Approved Quantity", item.approvedQty());
-            pack.put("Request Time", String.valueOf(item.requestDateTIme()));
-            pack.put("Approved Time", String.valueOf(item.getBorrowDateTime()));
+            pack.put("Quantity", item.offeredQty());
+            pack.put("Borrow Time", String.valueOf(item.getBorrowDateTime()));
             return pack;
         }
 
-        private String generateBIDStr(int num) {
-            String newBID = "b" + String.valueOf(num);
-            while (newBID.length() < 4) {
-                newBID = "b0" + newBID.substring(1);
-            }
-            return newBID;
-        }
-
-        private int convertBID(String bid) {
-            return Integer.parseInt(bid.substring(1));
-        }
     }
 }
